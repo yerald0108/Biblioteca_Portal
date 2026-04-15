@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}{{ libro.titulo }} · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 1rem;">
+  <a href="{% url 'biblioteca:libro_list' %}" style="font-size:13px; color:var(--gris-medio);">
+    ← Volver al listado
+  </a>
+</div>
+
+<div style="display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem;">
+
+  <!-- PORTADA -->
+  <div>
+    {% if libro.portada %}
+      <img src="{{ libro.portada.url }}" alt="Portada"
+           style="width:100%; border-radius:var(--radio-md); border:1px solid var(--borde);">
+    {% else %}
+      <div style="width:100%; aspect-ratio:2/3; background:var(--azul-fondo);
+                  border-radius:var(--radio-md); display:flex; align-items:center;
+                  justify-content:center; font-family:var(--fuente-titulo);
+                  font-size:36px; color:var(--azul-palido);">
+        {{ libro.titulo|slice:":1" }}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- INFO -->
+  <div>
+    <div class="card" style="margin-bottom: 1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h1 style="font-family:var(--fuente-titulo); font-size:24px; color:var(--azul-oscuro); margin-bottom:4px;">
+            {{ libro.titulo }}
+          </h1>
+          <p style="font-size:15px; color:var(--gris-medio);">{{ libro.autor }}</p>
+        </div>
+        {% if user.is_staff %}
+          <div style="display:flex; gap:8px;">
+            <a href="{% url 'biblioteca:libro_editar' libro.pk %}" class="btn btn--secondary btn--sm">Editar</a>
+            <a href="{% url 'biblioteca:libro_eliminar' libro.pk %}" class="btn btn--danger btn--sm">Eliminar</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:1.25rem;">
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Editorial</div>
+          <div style="font-size:14px; font-weight:600;">{{ libro.editorial|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Año</div>
+          <div style="font-size:14px; font-weight:600;">{{ libro.anio|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">ISBN</div>
+          <div style="font-size:14px; font-weight:600;">{{ libro.isbn|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Categoría</div>
+          <div style="font-size:14px; font-weight:600;">{{ libro.categoria|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Total ejemplares</div>
+          <div style="font-size:14px; font-weight:600;">{{ libro.total_ejemplares }}</div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Disponibles</div>
+          <div style="font-size:14px; font-weight:600; color:var(--verde);">{{ libro.ejemplares_disponibles }}</div>
+        </div>
+      </div>
+
+      {% if libro.descripcion %}
+        <p style="margin-top:1rem; font-size:14px; color:var(--gris-medio); line-height:1.7;">
+          {{ libro.descripcion }}
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- EJEMPLARES -->
+    <div class="card">
+      <div class="card__header">
+        <div class="card__title">Ejemplares físicos</div>
+        {% if user.is_staff %}
+          <a href="{% url 'biblioteca:ejemplar_agregar' libro.pk %}" class="btn btn--primary btn--sm">+ Agregar ejemplar</a>
+        {% endif %}
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Estado</th>
+              <th>Ubicación</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ej in ejemplares %}
+            <tr>
+              <td><code>{{ ej.codigo }}</code></td>
+              <td><span class="badge badge--{{ ej.estado }}">{{ ej.get_estado_display }}</span></td>
+              <td>{{ ej.ubicacion|default:"—" }}</td>
+              <td style="font-size:12px; color:var(--gris-medio);">{{ ej.notas|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center; color:var(--gris-medio); padding:1.5rem;">
+                No hay ejemplares registrados.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

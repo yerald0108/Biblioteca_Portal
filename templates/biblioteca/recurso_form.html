@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+  <div class="page-header">
+    <h1 class="page-header__title">{{ titulo }}</h1>
+    <a href="{% url 'biblioteca:recurso_list' %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Título *</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<div class="error-text">{{ form.titulo.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          {{ form.tipo }}
+        </div>
+        <div class="form-group">
+          <label>Imagen de portada</label>
+          {{ form.imagen }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Descripción</label>
+        {{ form.descripcion }}
+      </div>
+
+      <div class="form-group">
+        <label>Archivo adjunto</label>
+        {{ form.archivo }}
+        <div class="help-text">PDF, DOC, DOCX, etc.</div>
+        {% if form.instance.archivo %}
+          <div style="margin-top:4px; font-size:12px; color:var(--verde);">
+            Ya tiene un archivo. Subir uno nuevo lo reemplazará.
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>URL del video</label>
+        {{ form.url_video }}
+        <div class="help-text">Pega aquí el enlace de YouTube.</div>
+        {% if form.non_field_errors %}
+          <div class="error-text">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex; gap:1.5rem; margin-bottom:1.25rem;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
+          {{ form.publicado }} <span>Publicado</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
+          {{ form.destacado }} <span>Destacar en inicio</span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:recurso_list' %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--primary">{{ accion }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

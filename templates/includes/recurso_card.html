@@ -1,0 +1,67 @@
+{% load static %}
+<div class="card" style="display:flex; flex-direction:column; gap:10px;">
+
+  <!-- Tipo badge -->
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    {% if recurso.tipo == 'novedad' %}
+      <span class="badge badge--info">Novedad</span>
+    {% elif recurso.tipo == 'tutorial' %}
+      <span class="badge" style="background:var(--verde-fondo); color:var(--verde);">Tutorial</span>
+    {% elif recurso.tipo == 'manual' %}
+      <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">Manual</span>
+    {% elif recurso.tipo == 'video' %}
+      <span class="badge" style="background:var(--rojo-fondo); color:var(--rojo);">Video</span>
+    {% endif %}
+    {% if recurso.destacado %}
+      <span style="font-size:11px; color:var(--ambar);">★ Destacado</span>
+    {% endif %}
+  </div>
+
+  <!-- Imagen si existe -->
+  {% if recurso.imagen %}
+    <img src="{{ recurso.imagen.url }}" alt="{{ recurso.titulo }}"
+         style="width:100%; height:140px; object-fit:cover;
+                border-radius:var(--radio-md); border:1px solid var(--borde);">
+  {% endif %}
+
+  <!-- Título -->
+  <div>
+    <div style="font-weight:600; font-size:14px; color:var(--gris-texto); line-height:1.4;">
+      {{ recurso.titulo }}
+    </div>
+    <div style="font-size:11px; color:var(--gris-suave); margin-top:3px;">
+      {{ recurso.fecha_publicacion|date:"d/m/Y" }}
+    </div>
+  </div>
+
+  <!-- Descripción recortada -->
+  {% if recurso.descripcion %}
+    <p style="font-size:13px; color:var(--gris-medio); line-height:1.6;
+              display:-webkit-box; -webkit-line-clamp:2; line-clamp:3;
+              -webkit-box-orient:vertical; overflow:hidden;">
+      {{ recurso.descripcion }}
+    </p>
+  {% endif %}
+
+  <!-- Acciones -->
+  <div style="display:flex; gap:6px; margin-top:auto; padding-top:8px;
+              border-top:1px solid var(--borde); flex-wrap:wrap;">
+    <a href="{% url 'biblioteca:recurso_detail' recurso.pk %}"
+       class="btn btn--secondary btn--sm">Ver más</a>
+    {% if recurso.tiene_archivo %}
+      <a href="{% url 'biblioteca:recurso_descargar' recurso.pk %}"
+         class="btn btn--primary btn--sm">Descargar</a>
+    {% endif %}
+    {% if recurso.tiene_video %}
+      <a href="{% url 'biblioteca:recurso_detail' recurso.pk %}"
+         class="btn btn--sm" style="background:var(--rojo-fondo); color:var(--rojo);">
+        Ver video
+      </a>
+    {% endif %}
+    {% if user.is_staff %}
+      <a href="{% url 'biblioteca:recurso_editar' recurso.pk %}"
+         class="btn btn--secondary btn--sm" style="margin-left:auto;">Editar</a>
+    {% endif %}
+  </div>
+
+</div>

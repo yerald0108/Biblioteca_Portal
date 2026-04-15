@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Registrar devolución · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 3rem auto;">
+  <div class="card">
+    <h2 style="font-family:var(--fuente-titulo); color:var(--azul-oscuro); margin-bottom:0.75rem;">
+      Registrar devolución
+    </h2>
+    <div style="background:var(--gris-fondo); border-radius:var(--radio-md);
+                padding:1rem; margin-bottom:1.25rem; font-size:14px;">
+      <div style="margin-bottom:6px;">
+        <strong>Libro:</strong> {{ prestamo.ejemplar.libro.titulo }}
+      </div>
+      <div style="margin-bottom:6px;">
+        <strong>Ejemplar:</strong> {{ prestamo.ejemplar.codigo }}
+      </div>
+      <div style="margin-bottom:6px;">
+        <strong>Usuario:</strong> {{ prestamo.usuario.get_full_name|default:prestamo.usuario.username }}
+      </div>
+      <div>
+        <strong>Fecha límite:</strong> {{ prestamo.fecha_devolucion|date:"d/m/Y" }}
+        {% if prestamo.esta_vencido %}
+          <span style="color:var(--rojo); font-size:12px; margin-left:6px;">
+            ({{ prestamo.dias_restantes|abs }} días de retraso)
+          </span>
+        {% endif %}
+      </div>
+    </div>
+    <form method="post" style="display:flex; gap:8px; justify-content:flex-end;">
+      {% csrf_token %}
+      <a href="{% url 'biblioteca:prestamo_list' %}" class="btn btn--secondary">Cancelar</a>
+      <button type="submit" class="btn btn--primary">Confirmar devolución</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

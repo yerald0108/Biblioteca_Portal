@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Recursos · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Novedades y Recursos</h1>
+    <p class="page-header__sub">{{ total }} recurso{{ total|pluralize }} disponible{{ total|pluralize }}</p>
+  </div>
+  {% if user.is_staff %}
+    <a href="{% url 'biblioteca:recurso_crear' %}" class="btn btn--primary">+ Publicar recurso</a>
+  {% endif %}
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+    <div class="form-group" style="flex:2; margin:0;">
+      <label>Buscar</label>
+      <input type="text" name="q" value="{{ q }}"
+             placeholder="Título o descripción..." class="form-control" />
+    </div>
+    <div class="form-group" style="flex:1; margin:0;">
+      <label>Tipo</label>
+      <select name="tipo" class="form-control">
+        <option value="">Todos los tipos</option>
+        {% for val, etiqueta in tipo_choices %}
+          <option value="{{ val }}" {% if tipo == val %}selected{% endif %}>
+            {{ etiqueta }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
+    <a href="{% url 'biblioteca:recurso_list' %}" class="btn btn--secondary" style="height:40px;">
+      Limpiar
+    </a>
+  </form>
+</div>
+
+<!-- SECCIONES POR TIPO -->
+{% if not tipo %}
+
+  {% if novedades %}
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-family:var(--fuente-titulo); font-size:20px;
+               color:var(--azul-oscuro); margin-bottom:1rem;
+               padding-bottom:0.5rem; border-bottom:2px solid var(--azul-fondo);">
+      Novedades literarias
+    </h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+      {% for r in novedades %}{% include 'biblioteca/includes/recurso_card.html' with recurso=r %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if tutoriales %}
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-family:var(--fuente-titulo); font-size:20px;
+               color:var(--azul-oscuro); margin-bottom:1rem;
+               padding-bottom:0.5rem; border-bottom:2px solid var(--verde-fondo);">
+      Tutoriales
+    </h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+      {% for r in tutoriales %}{% include 'biblioteca/includes/recurso_card.html' with recurso=r %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if manuales %}
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-family:var(--fuente-titulo); font-size:20px;
+               color:var(--azul-oscuro); margin-bottom:1rem;
+               padding-bottom:0.5rem; border-bottom:2px solid var(--ambar-fondo);">
+      Manuales
+    </h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+      {% for r in manuales %}{% include 'biblioteca/includes/recurso_card.html' with recurso=r %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if videos %}
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-family:var(--fuente-titulo); font-size:20px;
+               color:var(--azul-oscuro); margin-bottom:1rem;
+               padding-bottom:0.5rem; border-bottom:2px solid var(--rojo-fondo);">
+      Videos
+    </h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+      {% for r in videos %}{% include 'biblioteca/includes/recurso_card.html' with recurso=r %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not recursos %}
+  <div style="text-align:center; padding:3rem; color:var(--gris-medio);">
+    No hay recursos publicados aún.
+  </div>
+  {% endif %}
+
+{% else %}
+  <!-- Vista filtrada -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;">
+    {% for r in recursos %}
+      {% include 'biblioteca/includes/recurso_card.html' with recurso=r %}
+    {% empty %}
+      <div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--gris-medio);">
+        No se encontraron recursos con esos criterios.
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% endblock %}

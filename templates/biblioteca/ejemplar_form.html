@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Agregar ejemplar · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Agregar ejemplar</h1>
+      <p class="page-header__sub">{{ libro.titulo }}</p>
+    </div>
+    <a href="{% url 'biblioteca:libro_detail' libro.pk %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Código *</label>
+        {{ form.codigo }}
+        <div class="help-text">Ejemplo: EJ-001, LIB-2024-045</div>
+        {% if form.codigo.errors %}<div class="error-text">{{ form.codigo.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        {{ form.estado }}
+      </div>
+      <div class="form-group">
+        <label>Ubicación en estantería</label>
+        {{ form.ubicacion }}
+        <div class="help-text">Ejemplo: Estante A, Fila 3</div>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        {{ form.notas }}
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:libro_detail' libro.pk %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--primary">Guardar ejemplar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

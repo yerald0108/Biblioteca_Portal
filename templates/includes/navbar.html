@@ -1,0 +1,41 @@
+{% load static %}
+<header class="navbar">
+  <div class="navbar__inner">
+
+    <a href="{% url 'home' %}" class="navbar__brand">
+      <div class="navbar__logo">B</div>
+      <div>
+        <div class="navbar__title">Portal de Información Institucional</div>
+        <div class="navbar__sub">Biblioteca · Repositorio · Cuerpo Docente</div>
+      </div>
+    </a>
+
+    <nav class="navbar__nav">
+      <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link--active{% endif %}">Inicio</a>
+      <a href="{% url 'biblioteca:libro_list' %}" class="nav-link">Libros</a>
+      <a href="{% url 'biblioteca:prestamo_list' %}" class="nav-link">Préstamos</a>
+      <a href="{% url 'biblioteca:tesis_list' %}" class="nav-link">Tesis</a>
+      <a href="{% url 'biblioteca:profesor_list' %}" class="nav-link">Profesores</a>
+      <a href="{% url 'biblioteca:recurso_list' %}" class="nav-link">Recursos</a>
+    </nav>
+
+    <div class="navbar__auth">
+      {% if user.is_authenticated %}
+        <span class="ldap-badge">LDAP</span>
+        <div class="user-menu">
+          <div class="user-avatar">{{ user.username|slice:":2"|upper }}</div>
+          <div class="user-dropdown">
+            <span class="user-dropdown__name">{{ user.get_full_name|default:user.username }}</span>
+            {% if user.is_staff %}
+              <a href="{% url 'admin:index' %}" class="user-dropdown__link">Panel admin</a>
+            {% endif %}
+            <a href="{% url 'logout' %}" class="user-dropdown__link user-dropdown__link--danger">Cerrar sesión</a>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn--primary btn--sm">Iniciar sesión</a>
+      {% endif %}
+    </div>
+
+  </div>
+</header>

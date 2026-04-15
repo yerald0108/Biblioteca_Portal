@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}{{ recurso.titulo }} · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:1rem;">
+  <a href="{% url 'biblioteca:recurso_list' %}" style="font-size:13px; color:var(--gris-medio);">
+    ← Volver a recursos
+  </a>
+</div>
+
+<div style="max-width:800px;">
+  <div class="card">
+
+    <!-- Cabecera -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">
+      <div>
+        {% if recurso.tipo == 'novedad' %}
+          <span class="badge badge--info" style="margin-bottom:8px; display:inline-block;">Novedad literaria</span>
+        {% elif recurso.tipo == 'tutorial' %}
+          <span class="badge" style="background:var(--verde-fondo); color:var(--verde); margin-bottom:8px; display:inline-block;">Tutorial</span>
+        {% elif recurso.tipo == 'manual' %}
+          <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar); margin-bottom:8px; display:inline-block;">Manual</span>
+        {% elif recurso.tipo == 'video' %}
+          <span class="badge" style="background:var(--rojo-fondo); color:var(--rojo); margin-bottom:8px; display:inline-block;">Video</span>
+        {% endif %}
+        <h1 style="font-family:var(--fuente-titulo); font-size:24px;
+                   color:var(--azul-oscuro); line-height:1.3;">
+          {{ recurso.titulo }}
+        </h1>
+        <p style="font-size:13px; color:var(--gris-medio); margin-top:4px;">
+          Publicado el {{ recurso.fecha_publicacion|date:"d/m/Y" }}
+          {% if recurso.autor %} por {{ recurso.autor.get_full_name|default:recurso.autor.username }}{% endif %}
+        </p>
+      </div>
+      {% if user.is_staff %}
+        <div style="display:flex; gap:8px; flex-shrink:0;">
+          <a href="{% url 'biblioteca:recurso_editar' recurso.pk %}" class="btn btn--secondary btn--sm">Editar</a>
+          <a href="{% url 'biblioteca:recurso_eliminar' recurso.pk %}" class="btn btn--danger btn--sm">Eliminar</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Imagen -->
+    {% if recurso.imagen %}
+      <img src="{{ recurso.imagen.url }}" alt="{{ recurso.titulo }}"
+           style="width:100%; max-height:300px; object-fit:cover;
+                  border-radius:var(--radio-md); margin-bottom:1.25rem;
+                  border:1px solid var(--borde);">
+    {% endif %}
+
+    <!-- Descripción -->
+    {% if recurso.descripcion %}
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-size:12px; font-weight:600; text-transform:uppercase;
+                    letter-spacing:.06em; color:var(--gris-medio); margin-bottom:8px;">
+          Descripción
+        </div>
+        <p style="font-size:14px; line-height:1.9; color:var(--gris-texto);">
+          {{ recurso.descripcion|linebreaksbr }}
+        </p>
+      </div>
+    {% endif %}
+
+    <!-- Video embed -->
+    {% if recurso.tiene_video %}
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-size:12px; font-weight:600; text-transform:uppercase;
+                    letter-spacing:.06em; color:var(--gris-medio); margin-bottom:8px;">
+          Video
+        </div>
+        <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden;
+                    border-radius:var(--radio-md); border:1px solid var(--borde);">
+          <iframe src="{{ recurso.embed_url }}"
+                  style="position:absolute; top:0; left:0; width:100%; height:100%;"
+                  frameborder="0" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Archivo descargable -->
+    {% if recurso.tiene_archivo %}
+      <div style="background:var(--gris-fondo); border-radius:var(--radio-md);
+                  padding:1rem; display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:48px; background:var(--ambar-fondo);
+                    border-radius:6px; display:flex; align-items:center; justify-content:center;
+                    font-size:11px; font-weight:700; color:var(--ambar); flex-shrink:0;">
+          DOC
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:600;">Archivo adjunto disponible</div>
+          <div style="font-size:12px; color:var(--gris-medio);">
+            Haz clic en el botón para descargar
+          </div>
+        </div>
+        <a href="{% url 'biblioteca:recurso_descargar' recurso.pk %}"
+           class="btn btn--primary">Descargar</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

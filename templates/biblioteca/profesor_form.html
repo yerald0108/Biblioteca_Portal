@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+  <div class="page-header">
+    <h1 class="page-header__title">{{ titulo }}</h1>
+    <a href="{% url 'biblioteca:profesor_list' %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+        <div class="form-group">
+          <label>Nombre *</label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}<div class="error-text">{{ form.nombre.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>Apellidos *</label>
+          {{ form.apellidos }}
+          {% if form.apellidos.errors %}<div class="error-text">{{ form.apellidos.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>Categoría *</label>
+          {{ form.categoria }}
+        </div>
+        <div class="form-group">
+          <label>Ámbito *</label>
+          {{ form.ambito }}
+        </div>
+        <div class="form-group">
+          <label>Especialidad *</label>
+          {{ form.especialidad }}
+        </div>
+        <div class="form-group">
+          <label>País</label>
+          {{ form.pais }}
+          <div class="help-text">Solo si es internacional</div>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          {{ form.email }}
+        </div>
+        <div class="form-group">
+          <label>Foto</label>
+          {{ form.foto }}
+          {% if form.instance.foto %}
+            <div style="margin-top:6px;">
+              <img src="{{ form.instance.foto.url }}" alt="Foto actual"
+                   style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Biografía</label>
+        {{ form.biografia }}
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          {{ form.activo }}
+          <span>Profesor activo</span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:profesor_list' %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--primary">{{ accion }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

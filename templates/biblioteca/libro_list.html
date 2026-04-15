@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Libros · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Libros</h1>
+    <p class="page-header__sub">{{ total }} libro{{ total|pluralize }} encontrado{{ total|pluralize }}</p>
+  </div>
+  {% if user.is_staff %}
+    <a href="{% url 'biblioteca:libro_crear' %}" class="btn btn--primary">+ Registrar libro</a>
+  {% endif %}
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <form method="get" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+    <div class="form-group" style="flex:2; margin:0;">
+      <label>Buscar</label>
+      {{ form.q }}
+    </div>
+    <div class="form-group" style="flex:1; margin:0;">
+      <label>Categoría</label>
+      {{ form.categoria }}
+    </div>
+    <div class="form-group" style="flex:1; margin:0;">
+      <label>Estado</label>
+      {{ form.estado }}
+    </div>
+    <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
+    <a href="{% url 'biblioteca:libro_list' %}" class="btn btn--secondary" style="height:40px;">Limpiar</a>
+  </form>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Título / Autor</th>
+          <th>Categoría</th>
+          <th>Año</th>
+          <th>Ejemplares</th>
+          <th>Disponibles</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for libro in libros %}
+        <tr>
+          <td>
+            <div style="font-weight:600; color:var(--gris-texto);">{{ libro.titulo }}</div>
+            <div style="font-size:12px; color:var(--gris-medio);">{{ libro.autor }}</div>
+          </td>
+          <td>
+            {% if libro.categoria %}
+              <span class="badge badge--info">{{ libro.categoria }}</span>
+            {% else %}
+              <span style="color:var(--gris-suave);">—</span>
+            {% endif %}
+          </td>
+          <td>{{ libro.anio|default:"—" }}</td>
+          <td>{{ libro.total_ejemplares }}</td>
+          <td>
+            {% if libro.ejemplares_disponibles > 0 %}
+              <span class="badge badge--disponible">{{ libro.ejemplares_disponibles }} disp.</span>
+            {% else %}
+              <span class="badge badge--prestado">Sin stock</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'biblioteca:libro_detail' libro.pk %}" class="btn btn--secondary btn--sm">Ver</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--gris-medio); padding: 2rem;">
+            No se encontraron libros con esos criterios.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

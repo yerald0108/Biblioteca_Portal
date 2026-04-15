@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Inicio · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="hero-banner">
+  <h1 class="hero-banner__title">Gestión y Acceso al Conocimiento</h1>
+  <p class="hero-banner__sub">Busca libros, tesis, docentes y recursos institucionales en un solo lugar</p>
+  <form method="get" action="{% url 'biblioteca:libro_list' %}" class="hero-banner__search">
+    <input type="text" name="q" placeholder="Buscar por título, autor, área temática..." class="search-input" />
+    <button type="submit" class="btn btn--primary">Buscar</button>
+  </form>
+</div>
+
+<div class="stats-grid">
+  <a href="{% url 'biblioteca:libro_list' %}" style="text-decoration:none;">
+    <div class="stat-card">
+      <div class="stat-card__num">{{ total_libros }}</div>
+      <div class="stat-card__label">Libros registrados</div>
+    </div>
+  </a>
+  <a href="{% url 'biblioteca:prestamo_list' %}" style="text-decoration:none;">
+    <div class="stat-card">
+      <div class="stat-card__num">{{ total_prestamos }}</div>
+      <div class="stat-card__label">Préstamos activos</div>
+    </div>
+  </a>
+  <a href="{% url 'biblioteca:tesis_list' %}" style="text-decoration:none;">
+    <div class="stat-card">
+      <div class="stat-card__num">{{ total_tesis }}</div>
+      <div class="stat-card__label">Tesis disponibles</div>
+    </div>
+  </a>
+  <a href="{% url 'biblioteca:profesor_list' %}" style="text-decoration:none;">
+    <div class="stat-card">
+      <div class="stat-card__num">{{ total_profesores }}</div>
+      <div class="stat-card__label">Profesores activos</div>
+    </div>
+  </a>
+</div>
+
+{% endblock %}

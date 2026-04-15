@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}{{ profesor.nombre_completo }} · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:1rem;">
+  <a href="{% url 'biblioteca:profesor_list' %}" style="font-size:13px; color:var(--gris-medio);">
+    ← Volver al cuerpo docente
+  </a>
+</div>
+
+<div style="max-width:750px;">
+  <div class="card">
+
+    <!-- Cabecera -->
+    <div style="display:flex; gap:1.5rem; align-items:flex-start; margin-bottom:1.5rem;">
+      {% if profesor.foto %}
+        <img src="{{ profesor.foto.url }}" alt="{{ profesor.nombre_completo }}"
+             style="width:90px; height:90px; border-radius:50%; object-fit:cover;
+                    border:3px solid var(--azul-palido); flex-shrink:0;">
+      {% else %}
+        <div style="width:90px; height:90px; border-radius:50%; flex-shrink:0;
+                    background:var(--azul-fondo); border:3px solid var(--azul-palido);
+                    display:flex; align-items:center; justify-content:center;
+                    font-family:var(--fuente-titulo); font-size:28px;
+                    font-weight:700; color:var(--azul-oscuro);">
+          {{ profesor.iniciales }}
+        </div>
+      {% endif %}
+
+      <div style="flex:1;">
+        <h1 style="font-family:var(--fuente-titulo); font-size:26px;
+                   color:var(--azul-oscuro); margin-bottom:4px;">
+          {{ profesor.nombre_completo }}
+        </h1>
+        <p style="font-size:15px; color:var(--gris-medio); margin-bottom:10px;">
+          {{ profesor.especialidad }}
+        </p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge--info">{{ profesor.get_categoria_display }}</span>
+          {% if profesor.ambito == 'internacional' %}
+            <span class="badge" style="background:var(--verde-fondo); color:var(--verde);">
+              Internacional · {{ profesor.pais }}
+            </span>
+          {% else %}
+            <span class="badge" style="background:var(--gris-fondo); color:var(--gris-medio);">
+              Nacional
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if user.is_staff %}
+        <div style="display:flex; gap:8px; flex-shrink:0;">
+          <a href="{% url 'biblioteca:profesor_editar' profesor.pk %}"
+             class="btn btn--secondary btn--sm">Editar</a>
+          <a href="{% url 'biblioteca:profesor_eliminar' profesor.pk %}"
+             class="btn btn--danger btn--sm">Eliminar</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Datos de contacto -->
+    {% if profesor.email %}
+      <div style="background:var(--gris-fondo); border-radius:var(--radio-md);
+                  padding:0.875rem 1rem; margin-bottom:1.25rem;
+                  display:flex; align-items:center; gap:10px;">
+        <span style="font-size:13px; color:var(--gris-medio);">Correo:</span>
+        <a href="mailto:{{ profesor.email }}"
+           style="font-size:14px; font-weight:600; color:var(--azul-claro);">
+          {{ profesor.email }}
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- Biografía -->
+    {% if profesor.biografia %}
+      <div>
+        <div style="font-size:12px; font-weight:600; text-transform:uppercase;
+                    letter-spacing:.06em; color:var(--gris-medio); margin-bottom:8px;">
+          Biografía
+        </div>
+        <p style="font-size:14px; line-height:1.9; color:var(--gris-texto);">
+          {{ profesor.biografia|linebreaksbr }}
+        </p>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

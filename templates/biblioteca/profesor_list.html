@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Profesores · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Cuerpo Docente</h1>
+    <p class="page-header__sub">{{ total }} profesor{{ total|pluralize }} encontrado{{ total|pluralize }}</p>
+  </div>
+  {% if user.is_staff %}
+    <a href="{% url 'biblioteca:profesor_crear' %}" class="btn btn--primary">+ Registrar profesor</a>
+  {% endif %}
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom:1.25rem;">
+  <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+    <div class="form-group" style="flex:2; margin:0;">
+      <label>Buscar</label>
+      <input type="text" name="q" value="{{ q }}"
+             placeholder="Nombre, apellidos, especialidad..." class="form-control" />
+    </div>
+    <div class="form-group" style="flex:1; margin:0;">
+      <label>Categoría</label>
+      <select name="categoria" class="form-control">
+        <option value="">Todas</option>
+        {% for val, etiqueta in categoria_choices %}
+          <option value="{{ val }}" {% if categoria == val %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="flex:1; margin:0;">
+      <label>Ámbito</label>
+      <select name="ambito" class="form-control">
+        <option value="">Todos</option>
+        {% for val, etiqueta in ambito_choices %}
+          <option value="{{ val }}" {% if ambito == val %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
+    <a href="{% url 'biblioteca:profesor_list' %}" class="btn btn--secondary" style="height:40px;">Limpiar</a>
+  </form>
+</div>
+
+<!-- GRID -->
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:1rem;">
+  {% for p in profesores %}
+  <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+
+    <!-- Cabecera con foto o iniciales -->
+    <div style="display:flex; align-items:center; gap:12px;">
+      {% if p.foto %}
+        <img src="{{ p.foto.url }}" alt="{{ p.nombre_completo }}"
+             style="width:52px; height:52px; border-radius:50%;
+                    object-fit:cover; border:2px solid var(--borde); flex-shrink:0;">
+      {% else %}
+        <div style="width:52px; height:52px; border-radius:50%; flex-shrink:0;
+                    background:var(--azul-fondo); border:2px solid var(--azul-palido);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:16px; font-weight:600; color:var(--azul-oscuro);">
+          {{ p.iniciales }}
+        </div>
+      {% endif %}
+      <div style="min-width:0;">
+        <div style="font-weight:600; font-size:15px; color:var(--gris-texto);">
+          {{ p.nombre_completo }}
+        </div>
+        <div style="font-size:12px; color:var(--gris-medio);">{{ p.especialidad }}</div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <span class="badge badge--info">{{ p.get_categoria_display }}</span>
+      {% if p.ambito == 'internacional' %}
+        <span class="badge" style="background:var(--verde-fondo); color:var(--verde);">
+          Internacional · {{ p.pais }}
+        </span>
+      {% else %}
+        <span class="badge" style="background:var(--gris-fondo); color:var(--gris-medio);">
+          Nacional
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Biografía recortada -->
+    {% if p.biografia %}
+      <p style="font-size:13px; color:var(--gris-medio); line-height:1.6;
+                display:-webkit-box; -webkit-line-clamp:3; line-clamp:3;
+                -webkit-box-orient:vertical; overflow:hidden;">
+        {{ p.biografia }}
+      </p>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div style="display:flex; gap:8px; margin-top:auto; padding-top:8px;
+                border-top:1px solid var(--borde);">
+      <a href="{% url 'biblioteca:profesor_detail' p.pk %}"
+         class="btn btn--secondary btn--sm">Ver perfil</a>
+      {% if user.is_staff %}
+        <a href="{% url 'biblioteca:profesor_editar' p.pk %}"
+           class="btn btn--secondary btn--sm" style="margin-left:auto;">Editar</a>
+      {% endif %}
+    </div>
+
+  </div>
+  {% empty %}
+  <div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--gris-medio);">
+    No se encontraron profesores con esos criterios.
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

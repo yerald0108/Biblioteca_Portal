@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo préstamo · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px; margin: 0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Registrar préstamo</h1>
+      <p class="page-header__sub">Solo se muestran ejemplares disponibles</p>
+    </div>
+    <a href="{% url 'biblioteca:prestamo_list' %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Ejemplar *</label>
+        {{ form.ejemplar }}
+        {% if form.ejemplar.errors %}<div class="error-text">{{ form.ejemplar.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Usuario *</label>
+        {{ form.usuario }}
+        {% if form.usuario.errors %}<div class="error-text">{{ form.usuario.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Fecha límite de devolución *</label>
+        {{ form.fecha_devolucion }}
+        {% if form.fecha_devolucion.errors %}<div class="error-text">{{ form.fecha_devolucion.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        {{ form.notas }}
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:prestamo_list' %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--primary">Registrar préstamo</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
