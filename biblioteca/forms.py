@@ -1,5 +1,6 @@
+from django.contrib.auth.models import User
 from django import forms
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario
 import datetime
 
 class LibroForm(forms.ModelForm):
@@ -138,3 +139,35 @@ class RecursoForm(forms.ModelForm):
                 'Un recurso de tipo Video debe tener una URL o un archivo.'
             )
         return cleaned
+    
+class PerfilForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=150, required=False, label='Nombre')
+    last_name  = forms.CharField(max_length=150, required=False, label='Apellidos')
+    email      = forms.EmailField(required=False, label='Correo electrónico')
+
+    class Meta:
+        model  = PerfilUsuario
+        fields = ['carnet', 'telefono', 'foto']
+
+    def __init__(self, *args, **kwargs):
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        if usuario:
+            self.fields['first_name'].initial = usuario.first_name
+            self.fields['last_name'].initial  = usuario.last_name
+            self.fields['email'].initial      = usuario.email
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+
+class GestionUsuarioForm(forms.ModelForm):
+    """Solo para el bibliotecario: cambia rol y datos básicos."""
+    class Meta:
+        model  = PerfilUsuario
+        fields = ['rol', 'carnet', 'telefono']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+            

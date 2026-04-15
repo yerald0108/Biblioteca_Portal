@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Gestión de usuarios</h1>
+    <p class="page-header__sub">{{ usuarios.count }} usuario{{ usuarios.count|pluralize }} registrado{{ usuarios.count|pluralize }}</p>
+  </div>
+  <a href="{% url 'admin:auth_user_add' %}" class="btn btn--primary">+ Nuevo usuario</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre completo</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Carnet</th>
+          <th>Registro</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="width:30px; height:30px; border-radius:50%;
+                          background:var(--azul-fondo); display:flex; align-items:center;
+                          justify-content:center; font-size:11px; font-weight:600;
+                          color:var(--azul-oscuro); flex-shrink:0;">
+                {% if u.perfil %}{{ u.perfil.iniciales }}{% else %}{{ u.username|slice:":2"|upper }}{% endif %}
+              </div>
+              <span style="font-weight:600;">{{ u.username }}</span>
+              {% if u.is_staff %}
+                <span class="badge badge--info" style="font-size:10px;">Staff</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>{{ u.get_full_name|default:"—" }}</td>
+          <td style="font-size:13px; color:var(--gris-medio);">{{ u.email|default:"—" }}</td>
+          <td>
+            {% if u.perfil %}
+              {% if u.perfil.rol == 'bibliotecario' %}
+                <span class="badge badge--info">{{ u.perfil.get_rol_display }}</span>
+              {% elif u.perfil.rol == 'estudiante' %}
+                <span class="badge" style="background:#EEEDFE; color:#3C3489;">{{ u.perfil.get_rol_display }}</span>
+              {% elif u.perfil.rol == 'profesor' %}
+                <span class="badge badge--disponible">{{ u.perfil.get_rol_display }}</span>
+              {% else %}
+                <span class="badge" style="background:var(--gris-fondo); color:var(--gris-medio);">{{ u.perfil.get_rol_display }}</span>
+              {% endif %}
+            {% else %}
+              <span style="color:var(--gris-suave); font-size:13px;">Sin perfil</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px;">{{ u.perfil.carnet|default:"—" }}</td>
+          <td style="font-size:13px; color:var(--gris-medio);">{{ u.date_joined|date:"d/m/Y" }}</td>
+          <td>
+            <a href="{% url 'biblioteca:usuario_editar' u.pk %}"
+               class="btn btn--secondary btn--sm">Editar rol</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

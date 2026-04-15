@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Panel del Bibliotecario · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Panel del Bibliotecario</h1>
+    <p class="page-header__sub">Resumen general del sistema</p>
+  </div>
+  <a href="{% url 'biblioteca:prestamo_crear' %}" class="btn btn--primary">+ Nuevo préstamo</a>
+</div>
+
+<!-- STATS GENERALES -->
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:1.5rem;">
+  <div class="stat-card">
+    <div class="stat-card__num">{{ stats.total_libros }}</div>
+    <div class="stat-card__label">Libros en catálogo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num">{{ stats.total_ejemplares }}</div>
+    <div class="stat-card__label">Ejemplares físicos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--rojo);">{{ prestamos_vencidos }}</div>
+    <div class="stat-card__label">Préstamos vencidos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--verde);">{{ prestamos_activos }}</div>
+    <div class="stat-card__label">Préstamos activos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num">{{ stats.total_tesis }}</div>
+    <div class="stat-card__label">Tesis en repositorio</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num">{{ stats.total_usuarios }}</div>
+    <div class="stat-card__label">Usuarios registrados</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+
+  <!-- PRÉSTAMOS POR VENCER -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">
+        Por vencer (próximos 2 días)
+        <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+          {{ prestamos_por_vencer.count }}
+        </span>
+      </div>
+      <a href="{% url 'biblioteca:prestamo_list' %}?estado=activo" class="card__action">Ver todos</a>
+    </div>
+    {% for p in prestamos_por_vencer %}
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
+                  border-bottom:1px solid var(--borde);">
+        <div style="width:8px; height:8px; border-radius:50%;
+                    background:var(--ambar); flex-shrink:0;"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ p.usuario.get_full_name|default:p.usuario.username }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">
+            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--ambar); flex-shrink:0;">
+          {{ p.fecha_devolucion|date:"d/m/Y" }}
+        </div>
+        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
+           class="btn btn--sm" style="background:var(--ambar-fondo); color:var(--ambar);">
+          Notificar
+        </a>
+      </div>
+    {% empty %}
+      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+        No hay préstamos próximos a vencer.
+      </p>
+    {% endfor %}
+  </div>
+
+  <!-- PRÉSTAMOS VENCIDOS -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">
+        Vencidos sin devolver
+        <span class="badge badge--prestado">{{ prestamos_vencidos }}</span>
+      </div>
+      <a href="{% url 'biblioteca:prestamo_list' %}?estado=vencido" class="card__action">Ver todos</a>
+    </div>
+    {% for p in prestamos_vencidos_lista %}
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
+                  border-bottom:1px solid var(--borde);">
+        <div style="width:8px; height:8px; border-radius:50%;
+                    background:var(--rojo); flex-shrink:0;"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ p.usuario.get_full_name|default:p.usuario.username }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">
+            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--rojo); flex-shrink:0;">
+          {{ p.dias_restantes }} días
+        </div>
+        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
+           class="btn btn--sm" style="background:var(--rojo-fondo); color:var(--rojo);">
+          Notificar
+        </a>
+      </div>
+    {% empty %}
+      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+        No hay préstamos vencidos.
+      </p>
+    {% endfor %}
+  </div>
+
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+  <!-- ÚLTIMOS LIBROS -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Últimos libros registrados</div>
+      <a href="{% url 'biblioteca:libro_crear' %}" class="card__action">+ Nuevo</a>
+    </div>
+    {% for libro in ultimos_libros %}
+      <div style="display:flex; align-items:center; justify-content:space-between;
+                  padding:8px 0; border-bottom:1px solid var(--borde);">
+        <div style="min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ libro.titulo }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">{{ libro.autor }}</div>
+        </div>
+        <a href="{% url 'biblioteca:libro_detail' libro.pk %}"
+           class="btn btn--secondary btn--sm" style="flex-shrink:0; margin-left:8px;">Ver</a>
+      </div>
+    {% empty %}
+      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">Sin libros aún.</p>
+    {% endfor %}
+  </div>
+
+  <!-- ACCIONES RÁPIDAS -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Acciones rápidas</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <a href="{% url 'biblioteca:libro_crear' %}"
+         style="display:flex; align-items:center; gap:10px; padding:10px;
+                border:1px solid var(--borde); border-radius:var(--radio-md);
+                text-decoration:none; color:var(--gris-texto);">
+        <div style="width:36px; height:36px; background:var(--azul-fondo);
+                    border-radius:var(--radio-sm); display:flex; align-items:center;
+                    justify-content:center; font-size:16px;">📚</div>
+        <div>
+          <div style="font-size:13px; font-weight:600;">Registrar libro</div>
+          <div style="font-size:11px; color:var(--gris-medio);">Añadir al catálogo</div>
+        </div>
+      </a>
+      <a href="{% url 'biblioteca:prestamo_crear' %}"
+         style="display:flex; align-items:center; gap:10px; padding:10px;
+                border:1px solid var(--borde); border-radius:var(--radio-md);
+                text-decoration:none; color:var(--gris-texto);">
+        <div style="width:36px; height:36px; background:var(--verde-fondo);
+                    border-radius:var(--radio-sm); display:flex; align-items:center;
+                    justify-content:center; font-size:16px;">📋</div>
+        <div>
+          <div style="font-size:13px; font-weight:600;">Registrar préstamo</div>
+          <div style="font-size:11px; color:var(--gris-medio);">Nuevo préstamo a usuario</div>
+        </div>
+      </a>
+      <a href="{% url 'biblioteca:usuario_list' %}"
+         style="display:flex; align-items:center; gap:10px; padding:10px;
+                border:1px solid var(--borde); border-radius:var(--radio-md);
+                text-decoration:none; color:var(--gris-texto);">
+        <div style="width:36px; height:36px; background:var(--ambar-fondo);
+                    border-radius:var(--radio-sm); display:flex; align-items:center;
+                    justify-content:center; font-size:16px;">👤</div>
+        <div>
+          <div style="font-size:13px; font-weight:600;">Gestionar usuarios</div>
+          <div style="font-size:11px; color:var(--gris-medio);">Roles y permisos</div>
+        </div>
+      </a>
+      <a href="{% url 'biblioteca:recurso_crear' %}"
+         style="display:flex; align-items:center; gap:10px; padding:10px;
+                border:1px solid var(--borde); border-radius:var(--radio-md);
+                text-decoration:none; color:var(--gris-texto);">
+        <div style="width:36px; height:36px; background:var(--rojo-fondo);
+                    border-radius:var(--radio-sm); display:flex; align-items:center;
+                    justify-content:center; font-size:16px;">📄</div>
+        <div>
+          <div style="font-size:13px; font-weight:600;">Publicar recurso</div>
+          <div style="font-size:11px; color:var(--gris-medio);">Novedad, tutorial, manual o video</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -6,8 +7,8 @@ from django.utils import timezone
 from django.http import FileResponse, Http404
 import os
 
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso
-from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso
+from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm
 from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes
 
 @login_required
@@ -504,3 +505,118 @@ def recurso_descargar(request, pk):
         as_attachment=True,
         filename=recurso.archivo.name.split('/')[-1]
     )
+    
+# ── PANEL BIBLIOTECARIO ──────────────────────────────────────
+
+@login_required
+def panel_bibliotecario(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Acceso restringido al bibliotecario.')
+        return redirect('home')
+
+    hoy    = timezone.now().date()
+    manana = hoy + timezone.timedelta(days=1)
+
+    # Estadísticas generales
+    stats = {
+        'total_libros':      Libro.objects.count(),
+        'total_ejemplares':  Ejemplar.objects.count(),
+        'total_tesis':       Tesis.objects.count(),
+        'total_profesores':  Profesor.objects.filter(activo=True).count(),
+        'total_usuarios':    User.objects.count(),
+        'total_recursos':    Recurso.objects.filter(publicado=True).count(),
+    }
+
+    # Préstamos
+    prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
+    prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
+    prestamos_por_vencer = Prestamo.objects.filter(
+        estado='activo',
+        fecha_devolucion__lte=hoy + timezone.timedelta(days=2),
+        fecha_devolucion__gte=hoy,
+    ).select_related('ejemplar__libro', 'usuario')
+
+    prestamos_vencidos_lista = Prestamo.objects.filter(
+        estado='vencido'
+    ).select_related('ejemplar__libro', 'usuario')[:10]
+
+    # Últimos registros
+    ultimos_libros    = Libro.objects.order_by('-fecha_registro')[:5]
+    ultimos_prestamos = Prestamo.objects.order_by('-fecha_prestamo')[:5]
+    usuarios          = User.objects.select_related('perfil').order_by('-date_joined')
+
+    return render(request, 'biblioteca/panel_bibliotecario.html', {
+        'stats':                  stats,
+        'prestamos_activos':      prestamos_activos,
+        'prestamos_vencidos':     prestamos_vencidos,
+        'prestamos_por_vencer':   prestamos_por_vencer,
+        'prestamos_vencidos_lista': prestamos_vencidos_lista,
+        'ultimos_libros':         ultimos_libros,
+        'ultimos_prestamos':      ultimos_prestamos,
+        'usuarios':               usuarios,
+    })
+
+
+# ── PERFIL PROPIO ────────────────────────────────────────────
+
+@login_required
+def mi_perfil(request):
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
+    form = PerfilForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=perfil,
+        usuario=request.user
+    )
+    if form.is_valid():
+        # Guardar datos del User
+        request.user.first_name = form.cleaned_data['first_name']
+        request.user.last_name  = form.cleaned_data['last_name']
+        request.user.email      = form.cleaned_data['email']
+        request.user.save()
+        form.save()
+        messages.success(request, 'Perfil actualizado correctamente.')
+        return redirect('biblioteca:mi_perfil')
+
+    mis_prestamos = Prestamo.objects.filter(
+        usuario=request.user
+    ).select_related('ejemplar__libro').order_by('-fecha_prestamo')[:5]
+
+    return render(request, 'biblioteca/mi_perfil.html', {
+        'form':          form,
+        'perfil':        perfil,
+        'mis_prestamos': mis_prestamos,
+    })
+
+
+# ── GESTIÓN DE USUARIOS (solo bibliotecario) ─────────────────
+
+@login_required
+def usuario_list(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Acceso restringido.')
+        return redirect('home')
+
+    usuarios = User.objects.select_related('perfil').order_by('-date_joined')
+    return render(request, 'biblioteca/usuario_list.html', {'usuarios': usuarios})
+
+
+@login_required
+def usuario_editar(request, pk):
+    if not request.user.is_staff:
+        messages.error(request, 'Acceso restringido.')
+        return redirect('home')
+
+    usuario = get_object_or_404(User, pk=pk)
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=usuario)
+    form = GestionUsuarioForm(request.POST or None, instance=perfil)
+    if form.is_valid():
+        form.save()
+        messages.success(request, f'Usuario "{usuario.username}" actualizado.')
+        return redirect('biblioteca:usuario_list')
+
+    return render(request, 'biblioteca/usuario_editar.html', {
+        'form':    form,
+        'usuario': usuario,
+        'perfil':  perfil,
+    })

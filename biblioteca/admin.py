@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Categoria, Libro, Ejemplar, Prestamo, Profesor, NotificacionCorreo, Tesis, Recurso
+from .models import Categoria, Libro, Ejemplar, Prestamo, Profesor, NotificacionCorreo, Tesis, Recurso, PerfilUsuario
 
 class EjemplarInline(admin.TabularInline):
     model  = Ejemplar
@@ -54,3 +54,10 @@ class RecursoAdmin(admin.ModelAdmin):
     list_filter   = ['tipo', 'publicado', 'destacado']
     search_fields = ['titulo', 'descripcion']
     list_editable = ['publicado', 'destacado']
+    
+@admin.register(PerfilUsuario)
+class PerfilUsuarioAdmin(admin.ModelAdmin):
+    list_display  = ['usuario', 'rol', 'carnet', 'telefono']
+    list_filter   = ['rol']
+    search_fields = ['usuario__username', 'usuario__first_name', 'carnet']
+    list_editable = ['rol']

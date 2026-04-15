@@ -40,4 +40,10 @@ urlpatterns = [
     path('recursos/<int:pk>/editar/',    views.recurso_editar,   name='recurso_editar'),
     path('recursos/<int:pk>/eliminar/',  views.recurso_eliminar, name='recurso_eliminar'),
     path('recursos/<int:pk>/descargar/', views.recurso_descargar,name='recurso_descargar'),
+    
+    # Panel y perfiles
+    path('panel/',                        views.panel_bibliotecario, name='panel'),
+    path('mi-perfil/',                    views.mi_perfil,           name='mi_perfil'),
+    path('usuarios/',                     views.usuario_list,        name='usuario_list'),
+    path('usuarios/<int:pk>/editar/',     views.usuario_editar,      name='usuario_editar'),
 ]

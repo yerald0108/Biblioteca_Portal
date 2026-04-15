@@ -22,14 +22,26 @@
     <div class="navbar__auth">
       {% if user.is_authenticated %}
         <span class="ldap-badge">LDAP</span>
+        {% if user.is_staff %}
+          <a href="{% url 'biblioteca:panel' %}"
+            class="btn btn--secondary btn--sm"
+            style="color:var(--azul-palido); border-color:rgba(181,212,244,0.3);">
+            Panel
+          </a>
+        {% endif %}
         <div class="user-menu">
           <div class="user-avatar">{{ user.username|slice:":2"|upper }}</div>
           <div class="user-dropdown">
-            <span class="user-dropdown__name">{{ user.get_full_name|default:user.username }}</span>
+            <span class="user-dropdown__name">
+              {{ user.get_full_name|default:user.username }}
+            </span>
+            <a href="{% url 'biblioteca:mi_perfil' %}" class="user-dropdown__link">Mi perfil</a>
             {% if user.is_staff %}
-              <a href="{% url 'admin:index' %}" class="user-dropdown__link">Panel admin</a>
+              <a href="{% url 'biblioteca:panel' %}" class="user-dropdown__link">Panel admin</a>
+              <a href="{% url 'biblioteca:usuario_list' %}" class="user-dropdown__link">Usuarios</a>
             {% endif %}
-            <a href="{% url 'logout' %}" class="user-dropdown__link user-dropdown__link--danger">Cerrar sesión</a>
+            <a href="{% url 'logout' %}"
+              class="user-dropdown__link user-dropdown__link--danger">Cerrar sesión</a>
           </div>
         </div>
       {% else %}

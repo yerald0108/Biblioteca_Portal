@@ -237,3 +237,35 @@ class Recurso(models.Model):
             video_id = url.split('youtu.be/')[-1].split('?')[0]
             return f'https://www.youtube.com/embed/{video_id}'
         return url
+    
+class PerfilUsuario(models.Model):
+    ROL_CHOICES = [
+        ('estudiante',   'Estudiante'),
+        ('profesor',     'Profesor'),
+        ('bibliotecario','Bibliotecario'),
+        ('visitante',    'Visitante'),
+    ]
+
+    usuario  = models.OneToOneField(User, on_delete=models.CASCADE,
+                                     related_name='perfil')
+    rol      = models.CharField(max_length=20, choices=ROL_CHOICES,
+                                 default='visitante')
+    carnet   = models.CharField(max_length=50, blank=True,
+                                 verbose_name='Carnet / Matrícula')
+    telefono = models.CharField(max_length=20, blank=True)
+    foto     = models.ImageField(upload_to='perfiles/', null=True, blank=True)
+
+    class Meta:
+        verbose_name        = 'Perfil de usuario'
+        verbose_name_plural = 'Perfiles de usuario'
+
+    def __str__(self):
+        return f'{self.usuario.username} — {self.get_rol_display()}'
+
+    def es_bibliotecario(self):
+        return self.rol == 'bibliotecario'
+
+    def iniciales(self):
+        nombre = self.usuario.get_full_name() or self.usuario.username
+        partes = nombre.split()
+        return ''.join(p[0] for p in partes[:2]).upper()

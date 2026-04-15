@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Mi perfil · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-header__title">Mi perfil</h1>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 2fr; gap:1.5rem; max-width:900px;">
+
+  <!-- Tarjeta perfil -->
+  <div class="card" style="text-align:center;">
+    {% if perfil.foto %}
+      <img src="{{ perfil.foto.url }}" alt="Foto de perfil"
+           style="width:90px; height:90px; border-radius:50%; object-fit:cover;
+                  border:3px solid var(--azul-palido); margin:0 auto 1rem;">
+    {% else %}
+      <div style="width:90px; height:90px; border-radius:50%; margin:0 auto 1rem;
+                  background:var(--azul-fondo); border:3px solid var(--azul-palido);
+                  display:flex; align-items:center; justify-content:center;
+                  font-family:var(--fuente-titulo); font-size:28px;
+                  font-weight:700; color:var(--azul-oscuro);">
+        {{ perfil.iniciales }}
+      </div>
+    {% endif %}
+    <div style="font-size:16px; font-weight:600; margin-bottom:4px;">
+      {{ request.user.get_full_name|default:request.user.username }}
+    </div>
+    <div style="font-size:13px; color:var(--gris-medio); margin-bottom:10px;">
+      {{ request.user.email|default:"Sin correo" }}
+    </div>
+    <span class="badge badge--info">{{ perfil.get_rol_display }}</span>
+    {% if perfil.carnet %}
+      <div style="margin-top:10px; font-size:12px; color:var(--gris-medio);">
+        Carnet: <strong>{{ perfil.carnet }}</strong>
+      </div>
+    {% endif %}
+    {% if request.user.is_staff %}
+      <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--borde);">
+        <a href="{% url 'biblioteca:panel' %}" class="btn btn--primary btn--sm">
+          Panel del bibliotecario
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <!-- Formulario -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card__header">
+        <div class="card__title">Editar datos personales</div>
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+          <div class="form-group">
+            <label>Nombre</label>
+            {{ form.first_name }}
+          </div>
+          <div class="form-group">
+            <label>Apellidos</label>
+            {{ form.last_name }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          {{ form.email }}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+          <div class="form-group">
+            <label>Carnet / Matrícula</label>
+            {{ form.carnet }}
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            {{ form.telefono }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Foto de perfil</label>
+          {{ form.foto }}
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button type="submit" class="btn btn--primary">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Mis préstamos recientes -->
+    <div class="card">
+      <div class="card__header">
+        <div class="card__title">Mis préstamos recientes</div>
+        <a href="{% url 'biblioteca:prestamo_list' %}" class="card__action">Ver todos</a>
+      </div>
+      {% for p in mis_prestamos %}
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:8px 0; border-bottom:1px solid var(--borde);">
+          <div style="min-width:0;">
+            <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                        overflow:hidden; text-overflow:ellipsis;">
+              {{ p.ejemplar.libro.titulo }}
+            </div>
+            <div style="font-size:11px; color:var(--gris-medio);">
+              Hasta {{ p.fecha_devolucion|date:"d/m/Y" }}
+            </div>
+          </div>
+          <span class="badge
+            {% if p.estado == 'activo' %}badge--disponible
+            {% elif p.estado == 'vencido' %}badge--prestado
+            {% else %}badge--info{% endif %}">
+            {{ p.get_estado_display }}
+          </span>
+        </div>
+      {% empty %}
+        <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+          No tienes préstamos registrados.
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
