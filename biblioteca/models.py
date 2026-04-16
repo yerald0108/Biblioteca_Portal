@@ -99,6 +99,10 @@ class Prestamo(models.Model):
     def dias_restantes(self):
         delta = self.fecha_devolucion - timezone.now().date()
         return delta.days
+    
+    def dias_retraso(self):
+        delta = timezone.now().date() - self.fecha_devolucion
+        return delta.days if delta.days > 0 else 0
 
     def save(self, *args, **kwargs):
         if self.esta_vencido() and self.estado == 'activo':

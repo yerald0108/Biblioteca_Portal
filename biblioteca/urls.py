@@ -19,31 +19,33 @@ urlpatterns = [
     path('prestamos/<int:pk>/notificar/',     views.prestamo_notificar, name='prestamo_notificar'),
     
     # Tesis
-    path('tesis/',                    views.tesis_list,    name='tesis_list'),
-    path('tesis/nueva/',              views.tesis_crear,   name='tesis_crear'),
-    path('tesis/<int:pk>/',           views.tesis_detail,  name='tesis_detail'),
-    path('tesis/<int:pk>/editar/',    views.tesis_editar,  name='tesis_editar'),
-    path('tesis/<int:pk>/eliminar/',  views.tesis_eliminar,name='tesis_eliminar'),
-    path('tesis/<int:pk>/pdf/',       views.tesis_ver_pdf, name='tesis_ver_pdf'),
+    path('tesis/',                            views.tesis_list,         name='tesis_list'),
+    path('tesis/nueva/',                      views.tesis_crear,        name='tesis_crear'),
+    path('tesis/<int:pk>/',                   views.tesis_detail,       name='tesis_detail'),
+    path('tesis/<int:pk>/editar/',            views.tesis_editar,       name='tesis_editar'),
+    path('tesis/<int:pk>/eliminar/',          views.tesis_eliminar,     name='tesis_eliminar'),
+    path('tesis/<int:pk>/pdf/',               views.tesis_ver_pdf,      name='tesis_ver_pdf'),
     
     # Profesores
-    path('profesores/',                   views.profesor_list,    name='profesor_list'),
-    path('profesores/nuevo/',             views.profesor_crear,   name='profesor_crear'),
-    path('profesores/<int:pk>/',          views.profesor_detail,  name='profesor_detail'),
-    path('profesores/<int:pk>/editar/',   views.profesor_editar,  name='profesor_editar'),
-    path('profesores/<int:pk>/eliminar/', views.profesor_eliminar,name='profesor_eliminar'),
+    path('profesores/',                       views.profesor_list,      name='profesor_list'),
+    path('profesores/nuevo/',                 views.profesor_crear,     name='profesor_crear'),
+    path('profesores/<int:pk>/',              views.profesor_detail,    name='profesor_detail'),
+    path('profesores/<int:pk>/editar/',       views.profesor_editar,    name='profesor_editar'),
+    path('profesores/<int:pk>/eliminar/',     views.profesor_eliminar,  name='profesor_eliminar'),
     
     # Recursos / Novedades
-    path('recursos/',                    views.recurso_list,     name='recurso_list'),
-    path('recursos/nuevo/',              views.recurso_crear,    name='recurso_crear'),
-    path('recursos/<int:pk>/',           views.recurso_detail,   name='recurso_detail'),
-    path('recursos/<int:pk>/editar/',    views.recurso_editar,   name='recurso_editar'),
-    path('recursos/<int:pk>/eliminar/',  views.recurso_eliminar, name='recurso_eliminar'),
-    path('recursos/<int:pk>/descargar/', views.recurso_descargar,name='recurso_descargar'),
+    path('recursos/',                         views.recurso_list,       name='recurso_list'),
+    path('recursos/nuevo/',                   views.recurso_crear,      name='recurso_crear'),
+    path('recursos/<int:pk>/',                views.recurso_detail,     name='recurso_detail'),
+    path('recursos/<int:pk>/editar/',         views.recurso_editar,     name='recurso_editar'),
+    path('recursos/<int:pk>/eliminar/',       views.recurso_eliminar,   name='recurso_eliminar'),
+    path('recursos/<int:pk>/descargar/',      views.recurso_descargar,  name='recurso_descargar'),
     
     # Panel y perfiles
-    path('panel/',                        views.panel_bibliotecario, name='panel'),
-    path('mi-perfil/',                    views.mi_perfil,           name='mi_perfil'),
-    path('usuarios/',                     views.usuario_list,        name='usuario_list'),
-    path('usuarios/<int:pk>/editar/',     views.usuario_editar,      name='usuario_editar'),
+    path('panel/',                            views.panel_bibliotecario, name='panel'),
+    path('mi-perfil/',                        views.mi_perfil,           name='mi_perfil'),
+    path('usuarios/',                         views.usuario_list,        name='usuario_list'),
+    path('usuarios/<int:pk>/editar/',         views.usuario_editar,      name='usuario_editar'),
+    
+    path('notificaciones/', views.notificaciones_list, name='notificaciones'),
 ]

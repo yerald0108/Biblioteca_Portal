@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Sesión cerrada · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:420px; margin:4rem auto; text-align:center;">
+  <div class="card">
+    <div style="width:52px; height:52px; background:var(--azul-oscuro);
+                border-radius:var(--radio-md); display:flex; align-items:center;
+                justify-content:center; margin:0 auto 1.25rem;
+                font-family:var(--fuente-titulo); font-size:24px;
+                font-weight:700; color:var(--azul-fondo);">B</div>
+    <h2 style="font-family:var(--fuente-titulo); font-size:20px;
+               color:var(--azul-oscuro); margin-bottom:0.5rem;">
+      Sesión cerrada
+    </h2>
+    <p style="font-size:14px; color:var(--gris-medio); margin-bottom:1.5rem;">
+      Has cerrado sesión correctamente.
+    </p>
+    <a href="{% url 'login' %}" class="btn btn--primary" style="justify-content:center; width:100%;">
+      Volver a iniciar sesión
+    </a>
+  </div>
+</div>
+{% endblock %}

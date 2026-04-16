@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Registro · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:3rem auto;">
+  <div class="card">
+
+    <div style="text-align:center; margin-bottom:1.75rem;">
+      <div style="width:52px; height:52px; background:var(--azul-oscuro);
+                  border-radius:var(--radio-md); display:flex; align-items:center;
+                  justify-content:center; margin:0 auto 1rem;
+                  font-family:var(--fuente-titulo); font-size:24px;
+                  font-weight:700; color:var(--azul-fondo);">B</div>
+      <h1 style="font-family:var(--fuente-titulo); font-size:22px; color:var(--azul-oscuro);">
+        Crear cuenta
+      </h1>
+      <p style="font-size:13px; color:var(--gris-medio); margin-top:4px;">
+        Completa los datos para acceder al portal
+      </p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
+        <div class="form-group">
+          <label>Nombre *</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}
+            <div class="error-text">{{ form.first_name.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label>Apellidos *</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}
+            <div class="error-text">{{ form.last_name.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nombre de usuario *</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <div class="error-text">{{ form.username.errors.0 }}</div>
+        {% endif %}
+        <div class="help-text">{{ form.username.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico *</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <div class="error-text">{{ form.email.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="form-group">
+        <label>Contraseña *</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+          <div class="error-text">{{ form.password1.errors.0 }}</div>
+        {% endif %}
+        <div class="help-text">{{ form.password1.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña *</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+          <div class="error-text">{{ form.password2.errors.0 }}</div>
+        {% endif %}
+      </div>
+      {% if form.non_field_errors %}
+        <div class="alert alert--error">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+      <button type="submit" class="btn btn--primary" style="width:100%; justify-content:center;">
+        Crear cuenta
+      </button>
+    </form>
+
+    <div style="margin-top:1rem; text-align:center; font-size:13px; color:var(--gris-medio);">
+      ¿Ya tienes cuenta?
+      <a href="{% url 'login' %}" style="color:var(--azul-claro);">Inicia sesión</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

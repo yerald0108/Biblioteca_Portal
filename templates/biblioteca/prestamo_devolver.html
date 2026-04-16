@@ -22,7 +22,7 @@
         <strong>Fecha límite:</strong> {{ prestamo.fecha_devolucion|date:"d/m/Y" }}
         {% if prestamo.esta_vencido %}
           <span style="color:var(--rojo); font-size:12px; margin-left:6px;">
-            ({{ prestamo.dias_restantes|abs }} días de retraso)
+            {{ prestamo.dias_retraso }}
           </span>
         {% endif %}
       </div>

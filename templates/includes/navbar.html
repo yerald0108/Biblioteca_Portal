@@ -40,8 +40,12 @@
               <a href="{% url 'biblioteca:panel' %}" class="user-dropdown__link">Panel admin</a>
               <a href="{% url 'biblioteca:usuario_list' %}" class="user-dropdown__link">Usuarios</a>
             {% endif %}
-            <a href="{% url 'logout' %}"
-              class="user-dropdown__link user-dropdown__link--danger">Cerrar sesión</a>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="user-dropdown__link user-dropdown__link--danger" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 0.5rem 1rem;">
+                Cerrar sesión
+              </button>
+            </form>
           </div>
         </div>
       {% else %}

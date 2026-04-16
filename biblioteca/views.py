@@ -1,15 +1,25 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
 from django.http import FileResponse, Http404
 import os
 
+from biblioteca.forms import RegistroUsuarioForm
 from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso
 from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm
-from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes
+from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes, NotificacionCorreo
+
+from django.core.paginator import Paginator
+
+
+def paginar(queryset, request, por_pagina=10):
+    paginator = Paginator(queryset, por_pagina)
+    pagina    = request.GET.get('pagina', 1)
+    return paginator.get_page(pagina)
 
 @login_required
 def libro_list(request):
@@ -32,8 +42,9 @@ def libro_list(request):
         if estado:
             libros = libros.filter(ejemplares__estado=estado).distinct()
 
+    libros_page = paginar(libros, request, 10)
     return render(request, 'biblioteca/libro_list.html', {
-        'libros': libros,
+        'libros': libros_page,
         'form':   form,
         'total':  libros.count(),
     })
@@ -142,10 +153,10 @@ def prestamo_list(request):
         prestamos = prestamos.filter(estado=estado_filtro)
 
     return render(request, 'biblioteca/prestamo_list.html', {
-        'prestamos':     prestamos,
-        'estado_filtro': estado_filtro,
-        'total_activos': Prestamo.objects.filter(estado='activo').count(),
-        'total_vencidos':Prestamo.objects.filter(estado='vencido').count(),
+        'prestamos':      paginar(prestamos, request, 15),
+        'estado_filtro':  estado_filtro,
+        'total_activos':  Prestamo.objects.filter(estado='activo').count(),
+        'total_vencidos': Prestamo.objects.filter(estado='vencido').count(),
     })
 
 @login_required
@@ -222,12 +233,12 @@ def tesis_list(request):
     areas = Tesis.objects.values_list('area', flat=True).distinct().order_by('area')
 
     return render(request, 'biblioteca/tesis_list.html', {
-        'tesis':       tesis,
-        'total':       tesis.count(),
-        'q':           q,
-        'tipo':        tipo,
-        'area':        area,
-        'areas':       areas,
+        'tesis':        paginar(tesis, request, 9),
+        'total':        tesis.count(),
+        'q':            q,
+        'tipo':         tipo,
+        'area':         area,
+        'areas':        areas,
         'tipo_choices': Tesis.TIPO_CHOICES,
     })
 
@@ -514,22 +525,24 @@ def panel_bibliotecario(request):
         messages.error(request, 'Acceso restringido al bibliotecario.')
         return redirect('home')
 
-    hoy    = timezone.now().date()
-    manana = hoy + timezone.timedelta(days=1)
+    import json
+    from django.db.models import Count
+    from django.utils import timezone
 
-    # Estadísticas generales
+    hoy = timezone.now().date()
+
     stats = {
-        'total_libros':      Libro.objects.count(),
-        'total_ejemplares':  Ejemplar.objects.count(),
-        'total_tesis':       Tesis.objects.count(),
-        'total_profesores':  Profesor.objects.filter(activo=True).count(),
-        'total_usuarios':    User.objects.count(),
-        'total_recursos':    Recurso.objects.filter(publicado=True).count(),
+        'total_libros':     Libro.objects.count(),
+        'total_ejemplares': Ejemplar.objects.count(),
+        'total_tesis':      Tesis.objects.count(),
+        'total_profesores': Profesor.objects.filter(activo=True).count(),
+        'total_usuarios':   User.objects.count(),
+        'total_recursos':   Recurso.objects.filter(publicado=True).count(),
     }
 
-    # Préstamos
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
+
     prestamos_por_vencer = Prestamo.objects.filter(
         estado='activo',
         fecha_devolucion__lte=hoy + timezone.timedelta(days=2),
@@ -540,20 +553,58 @@ def panel_bibliotecario(request):
         estado='vencido'
     ).select_related('ejemplar__libro', 'usuario')[:10]
 
-    # Últimos registros
-    ultimos_libros    = Libro.objects.order_by('-fecha_registro')[:5]
-    ultimos_prestamos = Prestamo.objects.order_by('-fecha_prestamo')[:5]
-    usuarios          = User.objects.select_related('perfil').order_by('-date_joined')
+    ultimos_libros = Libro.objects.order_by('-fecha_registro')[:5]
+
+    # ── Datos para gráficas ──────────────────────────────────
+
+    # 1. Préstamos por mes (últimos 6 meses)
+    labels_meses = []
+    valores_meses = []
+    nombres_meses = ['Ene','Feb','Mar','Abr','May','Jun',
+                     'Jul','Ago','Sep','Oct','Nov','Dic']
+    for i in range(5, -1, -1):
+        fecha = hoy - timezone.timedelta(days=30 * i)
+        count = Prestamo.objects.filter(
+            fecha_prestamo__year=fecha.year,
+            fecha_prestamo__month=fecha.month,
+        ).count()
+        labels_meses.append(nombres_meses[fecha.month - 1])
+        valores_meses.append(count)
+
+    datos_prestamos_json = json.dumps({
+        'labels':  labels_meses,
+        'valores': valores_meses,
+    })
+
+    # 2. Libros por categoría
+    cats = Libro.objects.values(
+        'categoria__nombre'
+    ).annotate(total=Count('id')).order_by('-total')
+    datos_categorias_json = json.dumps({
+        'labels':  [c['categoria__nombre'] or 'Sin categoría' for c in cats],
+        'valores': [c['total'] for c in cats],
+    })
+
+    # 3. Estado del inventario
+    estados = {'disponible': 0, 'prestado': 0, 'reservado': 0, 'deteriorado': 0}
+    for ej in Ejemplar.objects.values('estado').annotate(total=Count('id')):
+        if ej['estado'] in estados:
+            estados[ej['estado']] = ej['total']
+    datos_inventario_json = json.dumps(list(estados.values()))
+
+    usuarios = User.objects.select_related('perfil').order_by('-date_joined')
 
     return render(request, 'biblioteca/panel_bibliotecario.html', {
-        'stats':                  stats,
-        'prestamos_activos':      prestamos_activos,
-        'prestamos_vencidos':     prestamos_vencidos,
-        'prestamos_por_vencer':   prestamos_por_vencer,
+        'stats':                    stats,
+        'prestamos_activos':        prestamos_activos,
+        'prestamos_vencidos':       prestamos_vencidos,
+        'prestamos_por_vencer':     prestamos_por_vencer,
         'prestamos_vencidos_lista': prestamos_vencidos_lista,
-        'ultimos_libros':         ultimos_libros,
-        'ultimos_prestamos':      ultimos_prestamos,
-        'usuarios':               usuarios,
+        'ultimos_libros':           ultimos_libros,
+        'usuarios':                 usuarios,
+        'datos_prestamos_json':     datos_prestamos_json,
+        'datos_categorias_json':    datos_categorias_json,
+        'datos_inventario_json':    datos_inventario_json,
     })
 
 
@@ -619,4 +670,50 @@ def usuario_editar(request, pk):
         'form':    form,
         'usuario': usuario,
         'perfil':  perfil,
+    })
+    
+@login_required
+def home(request):
+    context = {
+        'total_libros':     Libro.objects.count(),
+        'total_prestamos':  Prestamo.objects.filter(estado='activo').count(),
+        'total_tesis':      Tesis.objects.filter(disponible=True).count(),
+        'total_profesores': Profesor.objects.filter(activo=True).count(),
+    }
+    return render(request, 'home.html', context)
+
+
+def registro(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+    form = RegistroUsuarioForm(request.POST or None)
+    if form.is_valid():
+        usuario = form.save()
+        login(request, usuario)
+        return redirect('home')
+    return render(request, 'registration/registro.html', {'form': form})
+
+@login_required
+def notificaciones_list(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Acceso restringido.')
+        return redirect('home')
+
+    notificaciones = NotificacionCorreo.objects.select_related(
+        'prestamo__usuario',
+        'prestamo__ejemplar__libro'
+    ).order_by('-enviado_en')
+
+    tipo_filtro = request.GET.get('tipo', '')
+    exito_filtro = request.GET.get('exitoso', '')
+
+    if tipo_filtro:
+        notificaciones = notificaciones.filter(tipo=tipo_filtro)
+    if exito_filtro:
+        notificaciones = notificaciones.filter(exitoso=(exito_filtro == '1'))
+
+    return render(request, 'biblioteca/notificaciones_list.html', {
+        'notificaciones': paginar(notificaciones, request, 20),
+        'tipo_filtro':    tipo_filtro,
+        'exito_filtro':   exito_filtro,
     })

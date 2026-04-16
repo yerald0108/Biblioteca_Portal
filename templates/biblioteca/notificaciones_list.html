@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Historial de notificaciones · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Historial de notificaciones</h1>
+    <p class="page-header__sub">Correos enviados por el sistema</p>
+  </div>
+  <a href="{% url 'biblioteca:panel' %}" class="btn btn--secondary">← Panel</a>
+</div>
+
+<!-- FILTROS -->
+<div class="card" style="margin-bottom:1rem;">
+  <form method="get" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+    <div class="form-group" style="margin:0; flex:1;">
+      <label>Tipo</label>
+      <select name="tipo" class="form-control">
+        <option value="">Todos</option>
+        <option value="vencimiento"  {% if tipo_filtro == 'vencimiento' %}selected{% endif %}>Vencimiento</option>
+        <option value="recordatorio" {% if tipo_filtro == 'recordatorio' %}selected{% endif %}>Recordatorio</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0; flex:1;">
+      <label>Estado</label>
+      <select name="exitoso" class="form-control">
+        <option value="">Todos</option>
+        <option value="1" {% if exito_filtro == '1' %}selected{% endif %}>Enviados</option>
+        <option value="0" {% if exito_filtro == '0' %}selected{% endif %}>Fallidos</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
+    <a href="{% url 'biblioteca:notificaciones' %}"
+       class="btn btn--secondary" style="height:40px;">Limpiar</a>
+  </form>
+</div>
+
+<!-- TABLA -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha y hora</th>
+          <th>Tipo</th>
+          <th>Usuario</th>
+          <th>Libro</th>
+          <th>Estado</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in notificaciones %}
+        <tr>
+          <td style="font-size:13px; white-space:nowrap;">
+            {{ n.enviado_en|date:"d/m/Y H:i" }}
+          </td>
+          <td>
+            {% if n.tipo == 'vencimiento' %}
+              <span class="badge badge--prestado">Vencimiento</span>
+            {% else %}
+              <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+                Recordatorio
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="font-size:13px; font-weight:600;">
+              {{ n.prestamo.usuario.get_full_name|default:n.prestamo.usuario.username }}
+            </div>
+            <div style="font-size:11px; color:var(--gris-medio);">
+              {{ n.prestamo.usuario.email|default:"Sin correo" }}
+            </div>
+          </td>
+          <td style="font-size:13px;">
+            {{ n.prestamo.ejemplar.libro.titulo|truncatechars:40 }}
+          </td>
+          <td>
+            {% if n.exitoso %}
+              <span class="badge badge--disponible">Enviado</span>
+            {% else %}
+              <span class="badge badge--prestado">Fallido</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px; color:var(--gris-medio);">
+            {{ n.mensaje|truncatechars:50 }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--gris-medio); padding:2rem;">
+            No hay notificaciones registradas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/paginacion.html' with page_obj=notificaciones %}
+</div>
+
+{% endblock %}

@@ -11,7 +11,7 @@
   <a href="{% url 'biblioteca:prestamo_crear' %}" class="btn btn--primary">+ Nuevo préstamo</a>
 </div>
 
-<!-- STATS GENERALES -->
+<!-- STATS -->
 <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:1.5rem;">
   <div class="stat-card">
     <div class="stat-card__num">{{ stats.total_libros }}</div>
@@ -39,115 +39,42 @@
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+<!-- GRÁFICAS -->
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
 
-  <!-- PRÉSTAMOS POR VENCER -->
-  <div class="card">
+  <!-- Préstamos por mes -->
+  <div class="card" style="grid-column:1/3;">
     <div class="card__header">
-      <div class="card__title">
-        Por vencer (próximos 2 días)
-        <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
-          {{ prestamos_por_vencer.count }}
-        </span>
-      </div>
-      <a href="{% url 'biblioteca:prestamo_list' %}?estado=activo" class="card__action">Ver todos</a>
+      <div class="card__title">Préstamos por mes (últimos 6 meses)</div>
     </div>
-    {% for p in prestamos_por_vencer %}
-      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
-                  border-bottom:1px solid var(--borde);">
-        <div style="width:8px; height:8px; border-radius:50%;
-                    background:var(--ambar); flex-shrink:0;"></div>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:13px; font-weight:600; white-space:nowrap;
-                      overflow:hidden; text-overflow:ellipsis;">
-            {{ p.usuario.get_full_name|default:p.usuario.username }}
-          </div>
-          <div style="font-size:11px; color:var(--gris-medio);">
-            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
-          </div>
-        </div>
-        <div style="font-size:11px; color:var(--ambar); flex-shrink:0;">
-          {{ p.fecha_devolucion|date:"d/m/Y" }}
-        </div>
-        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
-           class="btn btn--sm" style="background:var(--ambar-fondo); color:var(--ambar);">
-          Notificar
-        </a>
-      </div>
-    {% empty %}
-      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
-        No hay préstamos próximos a vencer.
-      </p>
-    {% endfor %}
+    <canvas id="graficaPrestamos" height="120"></canvas>
   </div>
 
-  <!-- PRÉSTAMOS VENCIDOS -->
+  <!-- Libros por categoría -->
   <div class="card">
     <div class="card__header">
-      <div class="card__title">
-        Vencidos sin devolver
-        <span class="badge badge--prestado">{{ prestamos_vencidos }}</span>
-      </div>
-      <a href="{% url 'biblioteca:prestamo_list' %}?estado=vencido" class="card__action">Ver todos</a>
+      <div class="card__title">Libros por categoría</div>
     </div>
-    {% for p in prestamos_vencidos_lista %}
-      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
-                  border-bottom:1px solid var(--borde);">
-        <div style="width:8px; height:8px; border-radius:50%;
-                    background:var(--rojo); flex-shrink:0;"></div>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:13px; font-weight:600; white-space:nowrap;
-                      overflow:hidden; text-overflow:ellipsis;">
-            {{ p.usuario.get_full_name|default:p.usuario.username }}
-          </div>
-          <div style="font-size:11px; color:var(--gris-medio);">
-            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
-          </div>
-        </div>
-        <div style="font-size:11px; color:var(--rojo); flex-shrink:0;">
-          {{ p.dias_restantes }} días
-        </div>
-        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
-           class="btn btn--sm" style="background:var(--rojo-fondo); color:var(--rojo);">
-          Notificar
-        </a>
-      </div>
-    {% empty %}
-      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
-        No hay préstamos vencidos.
-      </p>
-    {% endfor %}
+    <canvas id="graficaCategorias" height="200"></canvas>
   </div>
 
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
 
-  <!-- ÚLTIMOS LIBROS -->
+  <!-- Estado del inventario -->
   <div class="card">
     <div class="card__header">
-      <div class="card__title">Últimos libros registrados</div>
-      <a href="{% url 'biblioteca:libro_crear' %}" class="card__action">+ Nuevo</a>
+      <div class="card__title">Estado del inventario</div>
     </div>
-    {% for libro in ultimos_libros %}
-      <div style="display:flex; align-items:center; justify-content:space-between;
-                  padding:8px 0; border-bottom:1px solid var(--borde);">
-        <div style="min-width:0;">
-          <div style="font-size:13px; font-weight:600; white-space:nowrap;
-                      overflow:hidden; text-overflow:ellipsis;">
-            {{ libro.titulo }}
-          </div>
-          <div style="font-size:11px; color:var(--gris-medio);">{{ libro.autor }}</div>
-        </div>
-        <a href="{% url 'biblioteca:libro_detail' libro.pk %}"
-           class="btn btn--secondary btn--sm" style="flex-shrink:0; margin-left:8px;">Ver</a>
-      </div>
-    {% empty %}
-      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">Sin libros aún.</p>
-    {% endfor %}
+    <div style="display:flex; align-items:center; gap:1.5rem;">
+      <canvas id="graficaInventario" width="180" height="180"
+              style="flex-shrink:0;"></canvas>
+      <div id="leyendaInventario" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
   </div>
 
-  <!-- ACCIONES RÁPIDAS -->
+  <!-- Acciones rápidas -->
   <div class="card">
     <div class="card__header">
       <div class="card__title">Acciones rápidas</div>
@@ -189,16 +116,16 @@
           <div style="font-size:11px; color:var(--gris-medio);">Roles y permisos</div>
         </div>
       </a>
-      <a href="{% url 'biblioteca:recurso_crear' %}"
+      <a href="{% url 'biblioteca:notificaciones' %}"
          style="display:flex; align-items:center; gap:10px; padding:10px;
                 border:1px solid var(--borde); border-radius:var(--radio-md);
                 text-decoration:none; color:var(--gris-texto);">
         <div style="width:36px; height:36px; background:var(--rojo-fondo);
                     border-radius:var(--radio-sm); display:flex; align-items:center;
-                    justify-content:center; font-size:16px;">📄</div>
+                    justify-content:center; font-size:16px;">✉</div>
         <div>
-          <div style="font-size:13px; font-weight:600;">Publicar recurso</div>
-          <div style="font-size:11px; color:var(--gris-medio);">Novedad, tutorial, manual o video</div>
+          <div style="font-size:13px; font-weight:600;">Historial de correos</div>
+          <div style="font-size:11px; color:var(--gris-medio);">Notificaciones enviadas</div>
         </div>
       </a>
     </div>
@@ -206,4 +133,188 @@
 
 </div>
 
+<!-- ALERTAS -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">
+        Por vencer (próximos 2 días)
+        <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+          {{ prestamos_por_vencer.count }}
+        </span>
+      </div>
+      <a href="{% url 'biblioteca:prestamo_list' %}?estado=activo" class="card__action">Ver todos</a>
+    </div>
+    {% for p in prestamos_por_vencer %}
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
+                  border-bottom:1px solid var(--borde);">
+        <div style="width:8px; height:8px; border-radius:50%;
+                    background:var(--ambar); flex-shrink:0;"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ p.usuario.get_full_name|default:p.usuario.username }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">
+            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--ambar); flex-shrink:0;">
+          {{ p.fecha_devolucion|date:"d/m/Y" }}
+        </div>
+        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
+           class="btn btn--sm" style="background:var(--ambar-fondo); color:var(--ambar);">
+          Notificar
+        </a>
+      </div>
+    {% empty %}
+      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+        No hay préstamos próximos a vencer.
+      </p>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">
+        Vencidos sin devolver
+        <span class="badge badge--prestado">{{ prestamos_vencidos }}</span>
+      </div>
+      <a href="{% url 'biblioteca:prestamo_list' %}?estado=vencido" class="card__action">Ver todos</a>
+    </div>
+    {% for p in prestamos_vencidos_lista %}
+      <div style="display:flex; align-items:center; gap:10px; padding:8px 0;
+                  border-bottom:1px solid var(--borde);">
+        <div style="width:8px; height:8px; border-radius:50%;
+                    background:var(--rojo); flex-shrink:0;"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ p.usuario.get_full_name|default:p.usuario.username }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">
+            {{ p.ejemplar.libro.titulo|truncatechars:40 }}
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--rojo); flex-shrink:0;">
+          {{ p.dias_restantes }} días
+        </div>
+        <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
+           class="btn btn--sm" style="background:var(--rojo-fondo); color:var(--rojo);">
+          Notificar
+        </a>
+      </div>
+    {% empty %}
+      <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+        No hay préstamos vencidos.
+      </p>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  const azul       = '#378ADD';
+  const azulOscuro = '#042C53';
+  const verde      = '#1D9E75';
+  const rojo       = '#E24B4A';
+  const ambar      = '#EF9F27';
+  const grisClaro  = '#D3D1C7';
+
+  // ── GRÁFICA 1: Préstamos por mes ──────────────────────────
+  const datosPrestamos = {{ datos_prestamos_json|safe }};
+  new Chart(document.getElementById('graficaPrestamos'), {
+    type: 'bar',
+    data: {
+      labels:   datosPrestamos.labels,
+      datasets: [{
+        label:           'Préstamos',
+        data:            datosPrestamos.valores,
+        backgroundColor: azul,
+        borderRadius:    6,
+        borderSkipped:   false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          grid:  { color: 'rgba(0,0,0,0.05)' },
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── GRÁFICA 2: Libros por categoría ───────────────────────
+  const datosCategorias = {{ datos_categorias_json|safe }};
+  new Chart(document.getElementById('graficaCategorias'), {
+    type: 'doughnut',
+    data: {
+      labels:   datosCategorias.labels,
+      datasets: [{
+        data:            datosCategorias.valores,
+        backgroundColor: [azul, verde, ambar, rojo, '#534AB7', '#1D9E75', '#EF9F27', grisClaro],
+        borderWidth:     2,
+        borderColor:     '#ffffff',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 11 }, boxWidth: 12, padding: 8 }
+        }
+      }
+    }
+  });
+
+  // ── GRÁFICA 3: Estado del inventario ──────────────────────
+  const datosInventario = {{ datos_inventario_json|safe }};
+  const coloresInv = [verde, rojo, ambar, grisClaro];
+  const etiquetasInv = ['Disponible', 'Prestado', 'Reservado', 'Deteriorado'];
+
+  new Chart(document.getElementById('graficaInventario'), {
+    type: 'doughnut',
+    data: {
+      labels:   etiquetasInv,
+      datasets: [{
+        data:            datosInventario,
+        backgroundColor: coloresInv,
+        borderWidth:     2,
+        borderColor:     '#ffffff',
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false } },
+      cutout: '65%',
+    }
+  });
+
+  // Leyenda manual del inventario
+  const leyenda = document.getElementById('leyendaInventario');
+  etiquetasInv.forEach((etiqueta, i) => {
+    const total = datosInventario.reduce((a, b) => a + b, 0);
+    const pct   = total > 0 ? Math.round(datosInventario[i] / total * 100) : 0;
+    leyenda.innerHTML += `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:10px; height:10px; border-radius:50%;
+                    background:${coloresInv[i]}; flex-shrink:0;"></div>
+        <div style="font-size:12px; color:var(--gris-texto);">
+          ${etiqueta}
+          <span style="color:var(--gris-medio);">${datosInventario[i]} (${pct}%)</span>
+        </div>
+      </div>`;
+  });
+</script>
 {% endblock %}
