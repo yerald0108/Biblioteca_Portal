@@ -101,6 +101,13 @@ class Prestamo(models.Model):
         return delta.days
     
     def dias_retraso(self):
+        """Devuelve los días de retraso si el préstamo está vencido, si no 0."""
+        if not self.esta_vencido():
+            return 0
+        delta = timezone.now().date() - self.fecha_devolucion
+        return delta.days
+    
+    def dias_retraso(self):
         delta = timezone.now().date() - self.fecha_devolucion
         return delta.days if delta.days > 0 else 0
 
@@ -273,3 +280,41 @@ class PerfilUsuario(models.Model):
         nombre = self.usuario.get_full_name() or self.usuario.username
         partes = nombre.split()
         return ''.join(p[0] for p in partes[:2]).upper()
+    
+class SolicitudPrestamo(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobada',  'Aprobada'),
+        ('rechazada', 'Rechazada'),
+    ]
+
+    libro           = models.ForeignKey(Libro, on_delete=models.CASCADE,
+                                         related_name='solicitudes')
+    usuario         = models.ForeignKey(User, on_delete=models.CASCADE,
+                                         related_name='solicitudes')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    estado          = models.CharField(max_length=20, choices=ESTADO_CHOICES,
+                                        default='pendiente')
+    mensaje         = models.TextField(blank=True,
+                                        verbose_name='Mensaje al bibliotecario')
+    respuesta       = models.TextField(blank=True,
+                                        verbose_name='Respuesta del bibliotecario')
+    prestamo        = models.OneToOneField(Prestamo, on_delete=models.SET_NULL,
+                                            null=True, blank=True,
+                                            related_name='solicitud')
+    atendida_por    = models.ForeignKey(User, on_delete=models.SET_NULL,
+                                         null=True, blank=True,
+                                         related_name='solicitudes_atendidas')
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name        = 'Solicitud de préstamo'
+        verbose_name_plural = 'Solicitudes de préstamo'
+        ordering            = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f'{self.usuario.username} → {self.libro.titulo} [{self.get_estado_display()}]'
+
+    def hay_ejemplar_disponible(self):
+        return self.libro.ejemplares.filter(estado='disponible').exists()
+    

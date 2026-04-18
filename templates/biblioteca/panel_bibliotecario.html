@@ -37,6 +37,16 @@
     <div class="stat-card__num">{{ stats.total_usuarios }}</div>
     <div class="stat-card__label">Usuarios registrados</div>
   </div>
+
+  <div class="stat-card" style="cursor:pointer;"
+     onclick='window.location="{% url "biblioteca:solicitud_list" %}"'>
+  <div class="stat-card__num" style="color:var(--ambar);">
+    {{ solicitudes_pendientes }}
+  </div>
+  <div class="stat-card__label">Solicitudes pendientes</div>
+  <div class="stat-card__delta" style="color:var(--ambar);">Ver solicitudes →</div>
+</div>
+
 </div>
 
 <!-- GRÁFICAS -->
@@ -197,8 +207,9 @@
             {{ p.ejemplar.libro.titulo|truncatechars:40 }}
           </div>
         </div>
+        {% load biblioteca_extras %}
         <div style="font-size:11px; color:var(--rojo); flex-shrink:0;">
-          {{ p.dias_restantes }} días
+          {{ p.dias_retraso }} día{{ p.dias_retraso|pluralize }} de retraso
         </div>
         <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
            class="btn btn--sm" style="background:var(--rojo-fondo); color:var(--rojo);">
@@ -212,6 +223,118 @@
     {% endfor %}
   </div>
 
+</div>
+
+<!-- HISTORIAL DE NOTIFICACIONES -->
+<div style="margin-top:1.5rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between;
+              margin-bottom:1rem;">
+    <h2 style="font-family:var(--fuente-titulo); font-size:18px;
+               color:var(--azul-oscuro);">
+      Historial de notificaciones por correo
+    </h2>
+    <a href="{% url 'biblioteca:notificaciones' %}"
+       style="font-size:13px; color:var(--azul-claro);">Ver historial completo →</a>
+  </div>
+
+  <!-- Resumen -->
+  <div style="display:grid; grid-template-columns:repeat(3,1fr);
+              gap:12px; margin-bottom:1rem;">
+    <div class="stat-card">
+      <div class="stat-card__num">{{ total_notificaciones }}</div>
+      <div class="stat-card__label">Total enviadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__num" style="color:var(--verde);">{{ notif_exitosas }}</div>
+      <div class="stat-card__label">Exitosas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__num" style="color:var(--rojo);">{{ notif_fallidas }}</div>
+      <div class="stat-card__label">Fallidas</div>
+    </div>
+  </div>
+
+  <!-- Lista de últimas notificaciones -->
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Últimas 8 notificaciones</div>
+      <div style="display:flex; gap:8px;">
+        <a href="{% url 'biblioteca:prestamo_list' %}?estado=vencido"
+           class="btn btn--sm"
+           style="background:var(--ambar-fondo); color:var(--ambar);">
+          Enviar notificaciones
+        </a>
+        <a href="{% url 'biblioteca:notificaciones' %}"
+           class="card__action">Ver todas</a>
+      </div>
+    </div>
+
+    {% if ultimas_notificaciones %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Usuario</th>
+            <th>Libro</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in ultimas_notificaciones %}
+          <tr>
+            <td style="font-size:12px; white-space:nowrap; color:var(--gris-medio);">
+              {{ n.enviado_en|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              {% if n.tipo == 'vencimiento' %}
+                <span class="badge badge--prestado">Vencimiento</span>
+              {% else %}
+                <span class="badge"
+                      style="background:var(--ambar-fondo); color:var(--ambar);">
+                  Recordatorio
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size:13px; font-weight:600;">
+                {{ n.prestamo.usuario.get_full_name|default:n.prestamo.usuario.username }}
+              </div>
+              <div style="font-size:11px; color:var(--gris-medio);">
+                {{ n.prestamo.usuario.email|default:"Sin correo" }}
+              </div>
+            </td>
+            <td style="font-size:13px;">
+              {{ n.prestamo.ejemplar.libro.titulo|truncatechars:35 }}
+            </td>
+            <td>
+              {% if n.exitoso %}
+                <span class="badge badge--disponible">Enviado</span>
+              {% else %}
+                <span class="badge badge--prestado"
+                      title="{{ n.mensaje }}">Fallido</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    <div style="text-align:center; padding:2rem; color:var(--gris-medio); font-size:14px;">
+      No hay notificaciones registradas aún.
+      <div style="margin-top:0.5rem; font-size:13px;">
+        Ejecuta
+        <code style="background:var(--gris-fondo); padding:2px 6px;
+                     border-radius:4px;">python manage.py enviar_notificaciones</code>
+        para procesar las notificaciones pendientes.
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
 </div>
 
 {% endblock %}

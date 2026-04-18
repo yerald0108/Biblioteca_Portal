@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, SolicitudPrestamo
 import datetime
 
 class LibroForm(forms.ModelForm):
@@ -189,4 +189,68 @@ class RegistroUsuarioForm(UserCreationForm):
         self.fields['username'].help_text = 'Solo letras, números y @/./+/-/_'
         self.fields['password1'].help_text = 'Mínimo 8 caracteres.'
         self.fields['password2'].help_text = ''
+        
+class SolicitudPrestamoForm(forms.ModelForm):
+    class Meta:
+        model   = SolicitudPrestamo
+        fields  = ['mensaje']
+        widgets = {
+            'mensaje': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Opcional: explica para qué necesitas el libro...'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['mensaje'].required = False
+        self.fields['mensaje'].widget.attrs['class'] = 'form-control'
+
+
+class AprobarSolicitudForm(forms.Form):
+    ejemplar = forms.ModelChoiceField(
+        queryset=None,
+        label='Ejemplar a prestar',
+        empty_label='Selecciona un ejemplar...'
+    )
+    fecha_devolucion = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Fecha límite de devolución'
+    )
+    respuesta = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2}),
+        label='Mensaje al usuario (opcional)'
+    )
+
+    def __init__(self, *args, **kwargs):
+        libro = kwargs.pop('libro', None)
+        super().__init__(*args, **kwargs)
+        if libro:
+            from .models import Ejemplar
+            self.fields['ejemplar'].queryset = Ejemplar.objects.filter(
+                libro=libro, estado='disponible'
+            )
+        self.fields['fecha_devolucion'].initial = (
+            datetime.date.today() + datetime.timedelta(days=7)
+        )
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+    def clean_fecha_devolucion(self):
+        fecha = self.cleaned_data.get('fecha_devolucion')
+        if fecha and fecha <= datetime.date.today():
+            raise forms.ValidationError('La fecha debe ser posterior a hoy.')
+        return fecha
+
+
+class RechazarSolicitudForm(forms.Form):
+    respuesta = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 3}),
+        label='Motivo del rechazo'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['respuesta'].widget.attrs['class'] = 'form-control'
             

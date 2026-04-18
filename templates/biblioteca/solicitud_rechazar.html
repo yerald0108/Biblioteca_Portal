@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Rechazar solicitud · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:0 auto;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Rechazar solicitud</h1>
+    </div>
+    <a href="{% url 'biblioteca:solicitud_list' %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <div style="background:var(--gris-fondo); border-radius:var(--radio-md);
+                padding:0.875rem 1rem; margin-bottom:1.25rem; font-size:14px;">
+      <strong>{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</strong>
+      solicitó <strong>{{ solicitud.libro.titulo }}</strong>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Motivo del rechazo *</label>
+        {{ form.respuesta }}
+        {% if form.respuesta.errors %}
+          <div class="error-text">{{ form.respuesta.errors.0 }}</div>
+        {% endif %}
+        <div class="help-text">
+          El usuario verá este mensaje en su historial de solicitudes.
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:solicitud_list' %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--danger">Confirmar rechazo</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

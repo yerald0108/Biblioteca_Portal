@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Mis solicitudes · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Mis solicitudes</h1>
+    <p class="page-header__sub">Historial de solicitudes de préstamo</p>
+  </div>
+  <a href="{% url 'biblioteca:libro_list' %}" class="btn btn--secondary">Ver libros</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Libro</th>
+          <th>Fecha solicitud</th>
+          <th>Estado</th>
+          <th>Respuesta</th>
+          <th>Préstamo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+        <tr>
+          <td>
+            <a href="{% url 'biblioteca:libro_detail' s.libro.pk %}"
+               style="font-weight:600; color:var(--azul-claro);">
+              {{ s.libro.titulo }}
+            </a>
+            <div style="font-size:12px; color:var(--gris-medio);">{{ s.libro.autor }}</div>
+          </td>
+          <td style="font-size:13px; white-space:nowrap;">
+            {{ s.fecha_solicitud|date:"d/m/Y H:i" }}
+          </td>
+          <td>
+            {% if s.estado == 'pendiente' %}
+              <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+                Pendiente
+              </span>
+            {% elif s.estado == 'aprobada' %}
+              <span class="badge badge--disponible">Aprobada</span>
+            {% else %}
+              <span class="badge badge--prestado">Rechazada</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px; color:var(--gris-medio);">
+            {{ s.respuesta|default:"—"|truncatechars:60 }}
+          </td>
+          <td>
+            {% if s.prestamo %}
+              <span class="badge badge--info">
+                Vence {{ s.prestamo.fecha_devolucion|date:"d/m/Y" }}
+              </span>
+            {% else %}
+              <span style="color:var(--gris-suave); font-size:13px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--gris-medio); padding:2rem;">
+            No tienes solicitudes registradas.
+            <a href="{% url 'biblioteca:libro_list' %}" style="color:var(--azul-claro);">
+              Busca un libro para solicitar
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/paginacion.html' with page_obj=solicitudes %}
+</div>
+
+{% endblock %}

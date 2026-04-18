@@ -22,7 +22,7 @@
     <div class="navbar__auth">
       {% if user.is_authenticated %}
         <span class="ldap-badge">LDAP</span>
-        {% if user.is_staff %}
+        {% if es_bibliotecario %}
           <a href="{% url 'biblioteca:panel' %}"
             class="btn btn--secondary btn--sm"
             style="color:var(--azul-palido); border-color:rgba(181,212,244,0.3);">
@@ -36,17 +36,29 @@
               {{ user.get_full_name|default:user.username }}
             </span>
             <a href="{% url 'biblioteca:mi_perfil' %}" class="user-dropdown__link">Mi perfil</a>
-            {% if user.is_staff %}
+            {% if es_estudiante or es_profesor %}
+              <a href="{% url 'biblioteca:mis_solicitudes' %}" class="user-dropdown__link">
+                Mis solicitudes
+              </a>
+            {% endif %}
+            {% if es_bibliotecario %}
+              <a href="{% url 'biblioteca:solicitud_list' %}" class="user-dropdown__link">
+                Solicitudes
+              </a>
               <a href="{% url 'biblioteca:panel' %}" class="user-dropdown__link">Panel admin</a>
               <a href="{% url 'biblioteca:usuario_list' %}" class="user-dropdown__link">Usuarios</a>
             {% endif %}
-            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            <form method="post" action="{% url 'logout' %}" style="margin:0;">
               {% csrf_token %}
-              <button type="submit" class="user-dropdown__link user-dropdown__link--danger" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; padding: 0.5rem 1rem;">
+              <button type="submit"
+                style="background:none; border:none; cursor:pointer; width:100%;
+                  text-align:left; padding:5px 8px; border-radius:var(--radio-sm);
+                  font-size:13px; font-family:var(--fuente-cuerpo);
+                  color:var(--rojo);">
                 Cerrar sesión
               </button>
             </form>
-          </div>
+            </div>
         </div>
       {% else %}
         <a href="{% url 'login' %}" class="btn btn--primary btn--sm">Iniciar sesión</a>

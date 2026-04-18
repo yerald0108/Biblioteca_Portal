@@ -8,7 +8,7 @@
     <h1 class="page-header__title">Libros</h1>
     <p class="page-header__sub">{{ total }} libro{{ total|pluralize }} encontrado{{ total|pluralize }}</p>
   </div>
-  {% if user.is_staff %}
+  {% if es_bibliotecario %}
     <a href="{% url 'biblioteca:libro_crear' %}" class="btn btn--primary">+ Registrar libro</a>
   {% endif %}
 </div>

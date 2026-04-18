@@ -8,7 +8,7 @@
     <h1 class="page-header__title">Novedades y Recursos</h1>
     <p class="page-header__sub">{{ total }} recurso{{ total|pluralize }} disponible{{ total|pluralize }}</p>
   </div>
-  {% if user.is_staff %}
+  {% if es_bibliotecario %}
     <a href="{% url 'biblioteca:recurso_crear' %}" class="btn btn--primary">+ Publicar recurso</a>
   {% endif %}
 </div>

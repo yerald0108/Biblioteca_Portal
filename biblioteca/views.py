@@ -8,9 +8,17 @@ from django.utils import timezone
 from django.http import FileResponse, Http404
 import os
 
+from .correo import (
+    enviar_notificacion_vencimiento,
+    enviar_recordatorio,
+    enviar_confirmacion_prestamo,
+    enviar_rechazo_solicitud,
+    procesar_notificaciones_pendientes,
+)
+from .decoradores import solo_bibliotecario, rol_requerido, get_rol
 from biblioteca.forms import RegistroUsuarioForm
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso
-from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo
+from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm, SolicitudPrestamoForm, AprobarSolicitudForm, RechazarSolicitudForm
 from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes, NotificacionCorreo
 
 from django.core.paginator import Paginator
@@ -58,7 +66,7 @@ def libro_detail(request, pk):
         'ejemplares': ejemplares,
     })
 
-@login_required
+@solo_bibliotecario
 def libro_crear(request):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para registrar libros.')
@@ -76,7 +84,7 @@ def libro_crear(request):
         'accion': 'Guardar libro',
     })
 
-@login_required
+@solo_bibliotecario
 def libro_editar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para editar libros.')
@@ -96,7 +104,7 @@ def libro_editar(request, pk):
         'accion': 'Guardar cambios',
     })
 
-@login_required
+@solo_bibliotecario
 def libro_eliminar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para eliminar libros.')
@@ -111,7 +119,7 @@ def libro_eliminar(request, pk):
 
     return render(request, 'biblioteca/libro_confirmar_eliminar.html', {'libro': libro})
 
-@login_required
+@solo_bibliotecario
 def ejemplar_agregar(request, libro_pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para agregar ejemplares.')
@@ -133,14 +141,20 @@ def ejemplar_agregar(request, libro_pk):
     
 @login_required
 def prestamo_list(request):
-    if request.user.is_staff:
+    rol = get_rol(request.user)
+
+    if rol == 'bibliotecario' or request.user.is_staff:
         prestamos = Prestamo.objects.select_related(
             'ejemplar__libro', 'usuario'
         ).all()
-    else:
+    elif rol in ('estudiante', 'profesor'):
         prestamos = Prestamo.objects.select_related(
             'ejemplar__libro', 'usuario'
         ).filter(usuario=request.user)
+    else:
+        # visitante no tiene préstamos
+        messages.info(request, 'Los visitantes no tienen préstamos registrados.')
+        return redirect('home')
 
     # Actualizar estados vencidos
     for p in prestamos:
@@ -157,9 +171,10 @@ def prestamo_list(request):
         'estado_filtro':  estado_filtro,
         'total_activos':  Prestamo.objects.filter(estado='activo').count(),
         'total_vencidos': Prestamo.objects.filter(estado='vencido').count(),
+        'es_bibliotecario': rol == 'bibliotecario' or request.user.is_staff,
     })
 
-@login_required
+@solo_bibliotecario
 def prestamo_crear(request):
     if not request.user.is_staff:
         messages.error(request, 'Solo el bibliotecario puede registrar préstamos.')
@@ -178,7 +193,7 @@ def prestamo_crear(request):
 
     return render(request, 'biblioteca/prestamo_form.html', {'form': form})
 
-@login_required
+@solo_bibliotecario
 def prestamo_devolver(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'Solo el bibliotecario puede registrar devoluciones.')
@@ -197,7 +212,7 @@ def prestamo_devolver(request, pk):
 
     return render(request, 'biblioteca/prestamo_devolver.html', {'prestamo': prestamo})
 
-@login_required
+@solo_bibliotecario
 def prestamo_notificar(request, pk):
     """El bibliotecario puede enviar manualmente el correo de vencimiento."""
     if not request.user.is_staff:
@@ -247,7 +262,7 @@ def tesis_detail(request, pk):
     tesis = get_object_or_404(Tesis, pk=pk)
     return render(request, 'biblioteca/tesis_detail.html', {'tesis': tesis})
 
-@login_required
+@rol_requerido('bibliotecario', 'profesor')
 def tesis_crear(request):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para registrar tesis.')
@@ -265,7 +280,7 @@ def tesis_crear(request):
         'accion': 'Guardar tesis',
     })
 
-@login_required
+@rol_requerido('bibliotecario', 'profesor')
 def tesis_editar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para editar tesis.')
@@ -285,7 +300,7 @@ def tesis_editar(request, pk):
         'accion': 'Guardar cambios',
     })
 
-@login_required
+@solo_bibliotecario
 def tesis_eliminar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para eliminar tesis.')
@@ -348,7 +363,7 @@ def profesor_detail(request, pk):
     profesor = get_object_or_404(Profesor, pk=pk)
     return render(request, 'biblioteca/profesor_detail.html', {'profesor': profesor})
 
-@login_required
+@solo_bibliotecario
 def profesor_crear(request):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para registrar profesores.')
@@ -366,7 +381,7 @@ def profesor_crear(request):
         'accion': 'Guardar profesor',
     })
 
-@login_required
+@solo_bibliotecario
 def profesor_editar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para editar profesores.')
@@ -386,7 +401,7 @@ def profesor_editar(request, pk):
         'accion':   'Guardar cambios',
     })
 
-@login_required
+@solo_bibliotecario
 def profesor_eliminar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para eliminar profesores.')
@@ -444,7 +459,7 @@ def recurso_detail(request, pk):
     return render(request, 'biblioteca/recurso_detail.html', {'recurso': recurso})
 
 
-@login_required
+@solo_bibliotecario
 def recurso_crear(request):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para publicar recursos.')
@@ -465,7 +480,7 @@ def recurso_crear(request):
     })
 
 
-@login_required
+@solo_bibliotecario
 def recurso_editar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para editar recursos.')
@@ -486,7 +501,7 @@ def recurso_editar(request, pk):
     })
 
 
-@login_required
+@solo_bibliotecario
 def recurso_eliminar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'No tienes permiso para eliminar recursos.')
@@ -519,7 +534,7 @@ def recurso_descargar(request, pk):
     
 # ── PANEL BIBLIOTECARIO ──────────────────────────────────────
 
-@login_required
+@solo_bibliotecario
 def panel_bibliotecario(request):
     if not request.user.is_staff:
         messages.error(request, 'Acceso restringido al bibliotecario.')
@@ -539,6 +554,8 @@ def panel_bibliotecario(request):
         'total_usuarios':   User.objects.count(),
         'total_recursos':   Recurso.objects.filter(publicado=True).count(),
     }
+    
+    solicitudes_pendientes = SolicitudPrestamo.objects.filter(estado='pendiente').count()
 
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
@@ -554,6 +571,17 @@ def panel_bibliotecario(request):
     ).select_related('ejemplar__libro', 'usuario')[:10]
 
     ultimos_libros = Libro.objects.order_by('-fecha_registro')[:5]
+    
+    # Últimas notificaciones enviadas
+    ultimas_notificaciones = NotificacionCorreo.objects.select_related(
+        'prestamo__usuario',
+        'prestamo__ejemplar__libro'
+    ).order_by('-enviado_en')[:8]
+
+    # Resumen de notificaciones
+    total_notificaciones  = NotificacionCorreo.objects.count()
+    notif_exitosas        = NotificacionCorreo.objects.filter(exitoso=True).count()
+    notif_fallidas        = NotificacionCorreo.objects.filter(exitoso=False).count()
 
     # ── Datos para gráficas ──────────────────────────────────
 
@@ -605,6 +633,12 @@ def panel_bibliotecario(request):
         'datos_prestamos_json':     datos_prestamos_json,
         'datos_categorias_json':    datos_categorias_json,
         'datos_inventario_json':    datos_inventario_json,
+        'solicitudes_pendientes':   solicitudes_pendientes,
+        
+        'ultimas_notificaciones': ultimas_notificaciones,
+        'total_notificaciones':   total_notificaciones,
+        'notif_exitosas':         notif_exitosas,
+        'notif_fallidas':         notif_fallidas,
     })
 
 
@@ -642,7 +676,7 @@ def mi_perfil(request):
 
 # ── GESTIÓN DE USUARIOS (solo bibliotecario) ─────────────────
 
-@login_required
+@solo_bibliotecario
 def usuario_list(request):
     if not request.user.is_staff:
         messages.error(request, 'Acceso restringido.')
@@ -652,7 +686,7 @@ def usuario_list(request):
     return render(request, 'biblioteca/usuario_list.html', {'usuarios': usuarios})
 
 
-@login_required
+@solo_bibliotecario
 def usuario_editar(request, pk):
     if not request.user.is_staff:
         messages.error(request, 'Acceso restringido.')
@@ -693,18 +727,24 @@ def registro(request):
         return redirect('home')
     return render(request, 'registration/registro.html', {'form': form})
 
-@login_required
+@solo_bibliotecario
 def notificaciones_list(request):
-    if not request.user.is_staff:
-        messages.error(request, 'Acceso restringido.')
-        return redirect('home')
+    # Envío masivo desde el botón del panel
+    if request.method == 'POST' and request.POST.get('accion') == 'enviar_masivo':
+        from .correo import procesar_notificaciones_pendientes
+        enviados = procesar_notificaciones_pendientes()
+        messages.success(
+            request,
+            f'{enviados} notificación(es) enviada(s) correctamente.'
+        )
+        return redirect('biblioteca:notificaciones')
 
     notificaciones = NotificacionCorreo.objects.select_related(
         'prestamo__usuario',
         'prestamo__ejemplar__libro'
     ).order_by('-enviado_en')
 
-    tipo_filtro = request.GET.get('tipo', '')
+    tipo_filtro  = request.GET.get('tipo', '')
     exito_filtro = request.GET.get('exitoso', '')
 
     if tipo_filtro:
@@ -713,7 +753,151 @@ def notificaciones_list(request):
         notificaciones = notificaciones.filter(exitoso=(exito_filtro == '1'))
 
     return render(request, 'biblioteca/notificaciones_list.html', {
-        'notificaciones': paginar(notificaciones, request, 20),
-        'tipo_filtro':    tipo_filtro,
-        'exito_filtro':   exito_filtro,
+        'notificaciones':      paginar(notificaciones, request, 20),
+        'tipo_filtro':         tipo_filtro,
+        'exito_filtro':        exito_filtro,
+        'total':               NotificacionCorreo.objects.count(),
+        'total_exitosas':      NotificacionCorreo.objects.filter(exitoso=True).count(),
+        'total_fallidas':      NotificacionCorreo.objects.filter(exitoso=False).count(),
+        'total_pendientes_envio': Prestamo.objects.filter(estado='vencido').count(),
+    })
+    
+@rol_requerido('estudiante', 'profesor', 'bibliotecario')
+def solicitud_crear(request, libro_pk):
+    libro = get_object_or_404(Libro, pk=libro_pk)
+
+    # Verificar que el libro tenga ejemplares disponibles
+    if not libro.ejemplares_disponibles():
+        messages.error(request, 'Este libro no tiene ejemplares disponibles.')
+        return redirect('biblioteca:libro_detail', pk=libro_pk)
+
+    # Verificar que no tenga una solicitud pendiente para este libro
+    solicitud_existente = SolicitudPrestamo.objects.filter(
+        usuario=request.user,
+        libro=libro,
+        estado='pendiente'
+    ).exists()
+    if solicitud_existente:
+        messages.warning(request, 'Ya tienes una solicitud pendiente para este libro.')
+        return redirect('biblioteca:libro_detail', pk=libro_pk)
+
+    form = SolicitudPrestamoForm(request.POST or None)
+    if form.is_valid():
+        solicitud          = form.save(commit=False)
+        solicitud.libro    = libro
+        solicitud.usuario  = request.user
+        solicitud.save()
+        messages.success(
+            request,
+            f'Solicitud enviada correctamente. '
+            f'El bibliotecario la revisará pronto.'
+        )
+        return redirect('biblioteca:mis_solicitudes')
+
+    return render(request, 'biblioteca/solicitud_form.html', {
+        'form':  form,
+        'libro': libro,
+    })
+
+
+@login_required
+def mis_solicitudes(request):
+    solicitudes = SolicitudPrestamo.objects.filter(
+        usuario=request.user
+    ).select_related('libro', 'prestamo').order_by('-fecha_solicitud')
+
+    return render(request, 'biblioteca/mis_solicitudes.html', {
+        'solicitudes': paginar(solicitudes, request, 10),
+    })
+
+
+@solo_bibliotecario
+def solicitud_list(request):
+    estado_filtro = request.GET.get('estado', 'pendiente')
+    solicitudes   = SolicitudPrestamo.objects.select_related(
+        'libro', 'usuario'
+    ).all()
+
+    if estado_filtro:
+        solicitudes = solicitudes.filter(estado=estado_filtro)
+
+    return render(request, 'biblioteca/solicitud_list.html', {
+        'solicitudes':    paginar(solicitudes, request, 15),
+        'estado_filtro':  estado_filtro,
+        'total_pendientes': SolicitudPrestamo.objects.filter(estado='pendiente').count(),
+    })
+
+
+@solo_bibliotecario
+def solicitud_aprobar(request, pk):
+    solicitud = get_object_or_404(SolicitudPrestamo, pk=pk, estado='pendiente')
+    form      = AprobarSolicitudForm(
+        request.POST or None,
+        libro=solicitud.libro
+    )
+
+    if form.is_valid():
+        ejemplar         = form.cleaned_data['ejemplar']
+        fecha_devolucion = form.cleaned_data['fecha_devolucion']
+        respuesta        = form.cleaned_data.get('respuesta', '')
+
+        # Crear el préstamo
+        prestamo = Prestamo.objects.create(
+            ejemplar         = ejemplar,
+            usuario          = solicitud.usuario,
+            fecha_devolucion = fecha_devolucion,
+            estado           = 'activo',
+            registrado_por   = request.user,
+            notas            = f'Aprobado desde solicitud #{solicitud.pk}',
+        )
+
+        # Marcar el ejemplar como prestado
+        ejemplar.estado = 'prestado'
+        ejemplar.save()
+
+        # Actualizar la solicitud
+        solicitud.estado          = 'aprobada'
+        solicitud.prestamo        = prestamo
+        solicitud.respuesta       = respuesta
+        solicitud.atendida_por    = request.user
+        solicitud.fecha_respuesta = timezone.now()
+        solicitud.save()
+        
+        # Enviar correo de confirmación al usuario
+        enviar_confirmacion_prestamo(prestamo)
+
+        messages.success(
+            request,
+            f'Solicitud aprobada. Préstamo creado para '
+            f'{solicitud.usuario.get_full_name() or solicitud.usuario.username}.'
+        )
+        return redirect('biblioteca:solicitud_list')
+
+    return render(request, 'biblioteca/solicitud_aprobar.html', {
+        'form':      form,
+        'solicitud': solicitud,
+    })
+
+
+@solo_bibliotecario
+def solicitud_rechazar(request, pk):
+    solicitud = get_object_or_404(SolicitudPrestamo, pk=pk, estado='pendiente')
+    form      = RechazarSolicitudForm(request.POST or None)
+
+    if form.is_valid():
+        solicitud.estado          = 'rechazada'
+        solicitud.respuesta       = form.cleaned_data['respuesta']
+        solicitud.atendida_por    = request.user
+        solicitud.fecha_respuesta = timezone.now()
+        solicitud.save()
+        
+        # Enviar correo de rechazo al usuario
+        enviar_rechazo_solicitud(solicitud)    
+        
+        messages.success(request, 'Solicitud rechazada.')
+        return redirect('biblioteca:solicitud_list')
+
+    return render(request, 'biblioteca/solicitud_rechazar.html', {
+        'form':      form,
+        'solicitud': solicitud,
     })

@@ -48,4 +48,11 @@ urlpatterns = [
     path('usuarios/<int:pk>/editar/',         views.usuario_editar,      name='usuario_editar'),
     
     path('notificaciones/', views.notificaciones_list, name='notificaciones'),
+    
+    # Solicitudes de préstamo
+    path('solicitudes/',                        views.solicitud_list,    name='solicitud_list'),
+    path('solicitudes/mis/',                    views.mis_solicitudes,   name='mis_solicitudes'),
+    path('solicitudes/<int:pk>/aprobar/',       views.solicitud_aprobar, name='solicitud_aprobar'),
+    path('solicitudes/<int:pk>/rechazar/',      views.solicitud_rechazar,name='solicitud_rechazar'),
+    path('libros/<int:libro_pk>/solicitar/',    views.solicitud_crear,   name='solicitud_crear'),
 ]

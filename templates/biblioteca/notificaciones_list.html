@@ -11,23 +11,79 @@
   <a href="{% url 'biblioteca:panel' %}" class="btn btn--secondary">← Panel</a>
 </div>
 
+<!-- STATS -->
+<div style="display:grid; grid-template-columns:repeat(4,1fr);
+            gap:12px; margin-bottom:1.5rem;">
+  <div class="stat-card">
+    <div class="stat-card__num">{{ total }}</div>
+    <div class="stat-card__label">Total notificaciones</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--verde);">{{ total_exitosas }}</div>
+    <div class="stat-card__label">Enviadas correctamente</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--rojo);">{{ total_fallidas }}</div>
+    <div class="stat-card__label">Fallidas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--ambar);">
+      {{ total_pendientes_envio }}
+    </div>
+    <div class="stat-card__label">Préstamos vencidos sin notificar</div>
+  </div>
+</div>
+
+<!-- ACCIÓN MASIVA -->
+<div class="card" style="margin-bottom:1rem; padding:0.875rem 1.25rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between;
+              flex-wrap:wrap; gap:1rem;">
+    <div>
+      <div style="font-size:14px; font-weight:600; color:var(--gris-texto);">
+        Enviar notificaciones pendientes
+      </div>
+      <div style="font-size:13px; color:var(--gris-medio);">
+        Envía correos a todos los usuarios con préstamos vencidos o próximos a vencer
+        que aún no han sido notificados hoy.
+      </div>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="enviar_masivo">
+      <button type="submit" class="btn btn--primary">
+        Enviar notificaciones pendientes
+      </button>
+    </form>
+  </div>
+</div>
+
 <!-- FILTROS -->
-<div class="card" style="margin-bottom:1rem;">
+<div class="card" style="margin-bottom:1rem; padding:0.875rem 1.25rem;">
   <form method="get" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
     <div class="form-group" style="margin:0; flex:1;">
       <label>Tipo</label>
       <select name="tipo" class="form-control">
         <option value="">Todos</option>
-        <option value="vencimiento"  {% if tipo_filtro == 'vencimiento' %}selected{% endif %}>Vencimiento</option>
-        <option value="recordatorio" {% if tipo_filtro == 'recordatorio' %}selected{% endif %}>Recordatorio</option>
+        <option value="vencimiento"
+                {% if tipo_filtro == 'vencimiento' %}selected{% endif %}>
+          Vencimiento
+        </option>
+        <option value="recordatorio"
+                {% if tipo_filtro == 'recordatorio' %}selected{% endif %}>
+          Recordatorio
+        </option>
       </select>
     </div>
     <div class="form-group" style="margin:0; flex:1;">
       <label>Estado</label>
       <select name="exitoso" class="form-control">
         <option value="">Todos</option>
-        <option value="1" {% if exito_filtro == '1' %}selected{% endif %}>Enviados</option>
-        <option value="0" {% if exito_filtro == '0' %}selected{% endif %}>Fallidos</option>
+        <option value="1" {% if exito_filtro == '1' %}selected{% endif %}>
+          Enviados
+        </option>
+        <option value="0" {% if exito_filtro == '0' %}selected{% endif %}>
+          Fallidos
+        </option>
       </select>
     </div>
     <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
@@ -46,6 +102,7 @@
           <th>Tipo</th>
           <th>Usuario</th>
           <th>Libro</th>
+          <th>Vencimiento préstamo</th>
           <th>Estado</th>
           <th>Detalle</th>
         </tr>
@@ -53,14 +110,15 @@
       <tbody>
         {% for n in notificaciones %}
         <tr>
-          <td style="font-size:13px; white-space:nowrap;">
+          <td style="font-size:12px; white-space:nowrap; color:var(--gris-medio);">
             {{ n.enviado_en|date:"d/m/Y H:i" }}
           </td>
           <td>
             {% if n.tipo == 'vencimiento' %}
               <span class="badge badge--prestado">Vencimiento</span>
             {% else %}
-              <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+              <span class="badge"
+                    style="background:var(--ambar-fondo); color:var(--ambar);">
                 Recordatorio
               </span>
             {% endif %}
@@ -74,7 +132,18 @@
             </div>
           </td>
           <td style="font-size:13px;">
-            {{ n.prestamo.ejemplar.libro.titulo|truncatechars:40 }}
+            <a href="{% url 'biblioteca:libro_detail' n.prestamo.ejemplar.libro.pk %}"
+               style="color:var(--azul-claro);">
+              {{ n.prestamo.ejemplar.libro.titulo|truncatechars:40 }}
+            </a>
+          </td>
+          <td style="font-size:12px;">
+            {{ n.prestamo.fecha_devolucion|date:"d/m/Y" }}
+            {% if n.prestamo.esta_vencido %}
+              <div style="color:var(--rojo); font-size:11px;">
+                {{ n.prestamo.dias_retraso }} día{{ n.prestamo.dias_retraso|pluralize }} de retraso
+              </div>
+            {% endif %}
           </td>
           <td>
             {% if n.exitoso %}
@@ -83,14 +152,15 @@
               <span class="badge badge--prestado">Fallido</span>
             {% endif %}
           </td>
-          <td style="font-size:12px; color:var(--gris-medio);">
-            {{ n.mensaje|truncatechars:50 }}
+          <td style="font-size:11px; color:var(--gris-medio); max-width:200px;">
+            {{ n.mensaje|truncatechars:60 }}
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6" style="text-align:center; color:var(--gris-medio); padding:2rem;">
-            No hay notificaciones registradas.
+          <td colspan="7"
+              style="text-align:center; color:var(--gris-medio); padding:2rem;">
+            No hay notificaciones registradas con esos criterios.
           </td>
         </tr>
         {% endfor %}

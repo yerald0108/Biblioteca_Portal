@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,6 +44,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'biblioteca.context_processors.rol_usuario',
             ],
         },
     },
@@ -58,6 +63,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+LOGOUT_REDIRECT_URL = '/'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LANGUAGE_CODE = 'es-cu'
@@ -74,12 +81,13 @@ LOGOUT_REDIRECT_URL = '/auth/login/'
 # Durante desarrollo usa la consola (imprime el email en la terminal)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Cuando tengas SMTP real, cambia a esto:
-# EMAIL_BACKEND   = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST      = 'smtp.gmail.com'
-# EMAIL_PORT      = 587
-# EMAIL_USE_TLS   = True
-# EMAIL_HOST_USER = 'tucorreo@gmail.com'
-# EMAIL_HOST_PASSWORD = 'tu_contrasena_de_aplicacion'
+# ── CORREO ──
+EMAIL_BACKEND    = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST       = 'smtp.gmail.com'
+EMAIL_PORT       = 587
+EMAIL_USE_TLS    = True
+EMAIL_HOST_USER  = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'Portal Biblioteca <{os.getenv("EMAIL_HOST_USER", "")}>'
 
 DEFAULT_FROM_EMAIL = 'Portal Biblioteca <biblioteca@institucion.cu>'

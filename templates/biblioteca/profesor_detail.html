@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      {% if user.is_staff %}
+      {% if es_bibliotecario %}
         <div style="display:flex; gap:8px; flex-shrink:0;">
           <a href="{% url 'biblioteca:profesor_editar' profesor.pk %}"
              class="btn btn--secondary btn--sm">Editar</a>

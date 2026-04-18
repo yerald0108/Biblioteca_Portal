@@ -8,7 +8,7 @@
     <h1 class="page-header__title">Repositorio de Tesis</h1>
     <p class="page-header__sub">{{ total }} tesis encontrada{{ total|pluralize }}</p>
   </div>
-  {% if user.is_staff %}
+  {% if es_bibliotecario or es_profesor %}
     <a href="{% url 'biblioteca:tesis_crear' %}" class="btn btn--primary">+ Registrar tesis</a>
   {% endif %}
 </div>
@@ -92,7 +92,7 @@
         <a href="{% url 'biblioteca:tesis_ver_pdf' t.pk %}"
            target="_blank" class="btn btn--primary btn--sm">Ver PDF</a>
       {% endif %}
-      {% if user.is_staff %}
+      {% if es_bibliotecario or es_profesor %}
         <a href="{% url 'biblioteca:tesis_editar' t.pk %}"
            class="btn btn--secondary btn--sm" style="margin-left:auto;">Editar</a>
       {% endif %}

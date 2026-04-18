@@ -55,7 +55,7 @@
           <th>Fecha préstamo</th>
           <th>Fecha límite</th>
           <th>Estado</th>
-          {% if user.is_staff %}<th>Acciones</th>{% endif %}
+          {% if es_bibliotecario %}<th>Acciones</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -72,14 +72,25 @@
           <td style="font-size:13px;">{{ p.fecha_prestamo|date:"d/m/Y" }}</td>
           <td style="font-size:13px;">
             {{ p.fecha_devolucion|date:"d/m/Y" }}
+            {% load biblioteca_extras %}
             {% if p.estado == 'activo' %}
               {% if p.dias_restantes <= 0 %}
-                <div style="font-size:11px; color:var(--rojo);">Vencido</div>
+                <div style="font-size:11px; color:var(--rojo);">
+                  Vencido · {{ p.dias_retraso }} día{{ p.dias_retraso|pluralize }} de retraso
+                </div>
               {% elif p.dias_restantes <= 2 %}
-                <div style="font-size:11px; color:var(--ambar);">{{ p.dias_restantes }} día(s)</div>
+                <div style="font-size:11px; color:var(--ambar);">
+                  Vence en {{ p.dias_restantes }} día{{ p.dias_restantes|pluralize }}
+                </div>
               {% else %}
-                <div style="font-size:11px; color:var(--verde);">{{ p.dias_restantes }} días</div>
+                <div style="font-size:11px; color:var(--verde);">
+                  {{ p.dias_restantes }} día{{ p.dias_restantes|pluralize }} restantes
+                </div>
               {% endif %}
+            {% elif p.estado == 'vencido' %}
+              <div style="font-size:11px; color:var(--rojo);">
+                {{ p.dias_retraso }} día{{ p.dias_retraso|pluralize }} de retraso
+              </div>
             {% endif %}
           </td>
           <td>
@@ -90,7 +101,7 @@
               {{ p.get_estado_display }}
             </span>
           </td>
-          {% if user.is_staff %}
+          {% if es_bibliotecario %}
           <td>
             <div style="display:flex; gap:6px;">
               {% if p.estado != 'devuelto' %}

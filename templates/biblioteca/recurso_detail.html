@@ -33,7 +33,7 @@
           {% if recurso.autor %} por {{ recurso.autor.get_full_name|default:recurso.autor.username }}{% endif %}
         </p>
       </div>
-      {% if user.is_staff %}
+      {% if es_bibliotecario %}
         <div style="display:flex; gap:8px; flex-shrink:0;">
           <a href="{% url 'biblioteca:recurso_editar' recurso.pk %}" class="btn btn--secondary btn--sm">Editar</a>
           <a href="{% url 'biblioteca:recurso_eliminar' recurso.pk %}" class="btn btn--danger btn--sm">Eliminar</a>

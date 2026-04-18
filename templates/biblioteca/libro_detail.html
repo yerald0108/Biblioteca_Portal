@@ -36,7 +36,7 @@
           </h1>
           <p style="font-size:15px; color:var(--gris-medio);">{{ libro.autor }}</p>
         </div>
-        {% if user.is_staff %}
+        {% if es_bibliotecario %}
           <div style="display:flex; gap:8px;">
             <a href="{% url 'biblioteca:libro_editar' libro.pk %}" class="btn btn--secondary btn--sm">Editar</a>
             <a href="{% url 'biblioteca:libro_eliminar' libro.pk %}" class="btn btn--danger btn--sm">Eliminar</a>
@@ -82,7 +82,7 @@
     <div class="card">
       <div class="card__header">
         <div class="card__title">Ejemplares físicos</div>
-        {% if user.is_staff %}
+        {% if es_bibliotecario %}
           <a href="{% url 'biblioteca:ejemplar_agregar' libro.pk %}" class="btn btn--primary btn--sm">+ Agregar ejemplar</a>
         {% endif %}
       </div>
@@ -115,6 +115,23 @@
         </table>
       </div>
     </div>
+
+    <!-- Botón solicitar para estudiantes y profesores -->
+    {% if es_estudiante or es_profesor %}
+      {% if libro.ejemplares_disponibles %}
+        <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
+          <a href="{% url 'biblioteca:solicitud_crear' libro.pk %}"
+            class="btn btn--primary">Solicitar préstamo</a>
+          <span style="font-size:12px; color:var(--gris-medio); margin-left:8px;">
+            Tu solicitud será revisada por el bibliotecario
+          </span>
+        </div>
+      {% else %}
+        <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
+          <span class="badge badge--prestado">Sin ejemplares disponibles</span>
+        </div>
+      {% endif %}
+    {% endif %}
 
   </div>
 </div>
