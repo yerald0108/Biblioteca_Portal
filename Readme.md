@@ -321,14 +321,14 @@ Este comando crea:
 
 Después de ejecutar `poblar_datos`, puedes iniciar sesión con cualquiera de estos usuarios. La contraseña de todos es **`prueba1234`**:
 
-| Usuario | Rol | Descripción |
-|---|---|---|
-| `bibliotecario1` | Bibliotecario | Acceso completo al sistema y al panel |
-| `estudiante1` | Estudiante | Puede solicitar préstamos y ver sus solicitudes |
-| `estudiante2` | Estudiante | Tiene préstamos vencidos asignados |
-| `estudiante3` | Estudiante | Tiene un préstamo activo |
-| `profesor1` | Profesor | Puede registrar tesis y solicitar préstamos |
-| `visitante1` | Visitante | Solo puede navegar el catálogo |
+| Usuario | Contraseña | Rol | Descripción |
+|---|---|---|---|
+| `bibliotecario1` | prueba1234 | Bibliotecario | Acceso completo al sistema y al panel |
+| `estudiante1` | prueba1234 | Estudiante | Puede solicitar préstamos y ver sus solicitudes |
+| `estudiante2` | prueba1234 | Estudiante | Tiene préstamos vencidos asignados |
+| `estudiante3` | prueba1234 | Estudiante | Tiene un préstamo activo |
+| `profesor1` | prueba1234 | Profesor | Puede registrar tesis y solicitar préstamos |
+| `visitante1` | prueba1234 | Visitante | Solo puede navegar el catálogo |
 
 El superusuario que creaste en el Paso 6 también puede entrar con sus credenciales.
 
