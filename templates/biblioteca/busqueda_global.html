@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}Búsqueda: {{ q }} · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Resultados de búsqueda</h1>
+    {% if q %}
+      <p class="page-header__sub">
+        {{ total }} resultado{{ total|pluralize }} para
+        "<strong>{{ q }}</strong>"
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- BARRA DE BÚSQUEDA -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <form method="get" style="display:flex; gap:8px;">
+    <input type="text" name="q" value="{{ q }}"
+           placeholder="Buscar en libros, tesis, profesores y recursos..."
+           class="form-control" style="flex:1;" autofocus />
+    <button type="submit" class="btn btn--primary">Buscar</button>
+    {% if q %}
+      <a href="{% url 'biblioteca:busqueda_global' %}"
+         class="btn btn--secondary">Limpiar</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if q %}
+
+  {% if not total %}
+  <div class="card" style="text-align:center; padding:3rem; color:var(--gris-medio);">
+    <div style="font-size:48px; margin-bottom:1rem;">🔍</div>
+    <div style="font-size:16px; font-weight:600; margin-bottom:0.5rem;">
+      Sin resultados
+    </div>
+    <div style="font-size:14px;">
+      No se encontró nada para "<strong>{{ q }}</strong>".
+      Intenta con otras palabras clave.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- LIBROS -->
+  {% if libros %}
+  <div style="margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                margin-bottom:0.875rem;">
+      <h2 style="font-family:var(--fuente-titulo); font-size:18px; color:var(--azul-oscuro);">
+        Libros
+        <span style="font-size:13px; color:var(--gris-medio); font-family:var(--fuente-cuerpo);
+                     font-weight:400; margin-left:6px;">{{ libros|length }} resultado{{ libros|length|pluralize }}</span>
+      </h2>
+      <a href="{% url 'biblioteca:libro_list' %}?q={{ q }}"
+         style="font-size:13px; color:var(--azul-claro);">Ver todos →</a>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for libro in libros %}
+      <div class="card" style="display:flex; align-items:center; gap:12px; padding:0.875rem 1rem;">
+        <div style="width:36px; height:48px; background:var(--azul-fondo);
+                    border-radius:4px; display:flex; align-items:center;
+                    justify-content:center; font-family:var(--fuente-titulo);
+                    font-size:16px; font-weight:700; color:var(--azul-oscuro);
+                    flex-shrink:0;">
+          {{ libro.titulo|slice:":1" }}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14px; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ libro.titulo }}
+          </div>
+          <div style="font-size:12px; color:var(--gris-medio);">
+            {{ libro.autor }}
+            {% if libro.categoria %}· {{ libro.categoria }}{% endif %}
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          {% if libro.ejemplares_disponibles %}
+            <span class="badge badge--disponible">{{ libro.ejemplares_disponibles }} disp.</span>
+          {% else %}
+            <span class="badge badge--prestado">Sin stock</span>
+          {% endif %}
+          <a href="{% url 'biblioteca:libro_detail' libro.pk %}"
+             class="btn btn--secondary btn--sm">Ver</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- TESIS -->
+  {% if tesis %}
+  <div style="margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                margin-bottom:0.875rem;">
+      <h2 style="font-family:var(--fuente-titulo); font-size:18px; color:var(--azul-oscuro);">
+        Tesis
+        <span style="font-size:13px; color:var(--gris-medio); font-family:var(--fuente-cuerpo);
+                     font-weight:400; margin-left:6px;">{{ tesis|length }} resultado{{ tesis|length|pluralize }}</span>
+      </h2>
+      <a href="{% url 'biblioteca:tesis_list' %}?q={{ q }}"
+         style="font-size:13px; color:var(--azul-claro);">Ver todas →</a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px;">
+      {% for t in tesis %}
+      <div class="card" style="padding:0.875rem 1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;
+                    gap:8px; margin-bottom:6px;">
+          <div style="font-weight:600; font-size:13px; line-height:1.4;">
+            {{ t.titulo|truncatechars:60 }}
+          </div>
+          <span class="badge badge--info" style="flex-shrink:0; font-size:10px;">
+            {{ t.get_tipo_display }}
+          </span>
+        </div>
+        <div style="font-size:12px; color:var(--gris-medio); margin-bottom:8px;">
+          {{ t.autor }} · {{ t.anio }}
+        </div>
+        <div style="display:flex; gap:6px;">
+          <a href="{% url 'biblioteca:tesis_detail' t.pk %}"
+             class="btn btn--secondary btn--sm">Ver</a>
+          {% if t.archivo_pdf %}
+            <a href="{% url 'biblioteca:tesis_ver_pdf' t.pk %}"
+               target="_blank" class="btn btn--primary btn--sm">PDF</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- PROFESORES -->
+  {% if profesores %}
+  <div style="margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                margin-bottom:0.875rem;">
+      <h2 style="font-family:var(--fuente-titulo); font-size:18px; color:var(--azul-oscuro);">
+        Profesores
+        <span style="font-size:13px; color:var(--gris-medio); font-family:var(--fuente-cuerpo);
+                     font-weight:400; margin-left:6px;">{{ profesores|length }} resultado{{ profesores|length|pluralize }}</span>
+      </h2>
+      <a href="{% url 'biblioteca:profesor_list' %}?q={{ q }}"
+         style="font-size:13px; color:var(--azul-claro);">Ver todos →</a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px;">
+      {% for p in profesores %}
+      <div class="card" style="display:flex; align-items:center; gap:10px; padding:0.875rem 1rem;">
+        <div style="width:42px; height:42px; border-radius:50%; flex-shrink:0;
+                    background:var(--azul-fondo); border:2px solid var(--azul-palido);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:14px; font-weight:600; color:var(--azul-oscuro);">
+          {{ p.iniciales }}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:13px;">{{ p.nombre_completo }}</div>
+          <div style="font-size:11px; color:var(--gris-medio);">{{ p.especialidad }}</div>
+        </div>
+        <a href="{% url 'biblioteca:profesor_detail' p.pk %}"
+           class="btn btn--secondary btn--sm" style="flex-shrink:0;">Ver</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- RECURSOS -->
+  {% if recursos %}
+  <div style="margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                margin-bottom:0.875rem;">
+      <h2 style="font-family:var(--fuente-titulo); font-size:18px; color:var(--azul-oscuro);">
+        Recursos
+        <span style="font-size:13px; color:var(--gris-medio); font-family:var(--fuente-cuerpo);
+                     font-weight:400; margin-left:6px;">{{ recursos|length }} resultado{{ recursos|length|pluralize }}</span>
+      </h2>
+      <a href="{% url 'biblioteca:recurso_list' %}?q={{ q }}"
+         style="font-size:13px; color:var(--azul-claro);">Ver todos →</a>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      {% for r in recursos %}
+      <div class="card" style="display:flex; align-items:center; gap:12px; padding:0.875rem 1rem;">
+        <div>
+          {% if r.tipo == 'novedad' %}
+            <span class="badge badge--info">Novedad</span>
+          {% elif r.tipo == 'tutorial' %}
+            <span class="badge" style="background:var(--verde-fondo);color:var(--verde);">Tutorial</span>
+          {% elif r.tipo == 'manual' %}
+            <span class="badge" style="background:var(--ambar-fondo);color:var(--ambar);">Manual</span>
+          {% elif r.tipo == 'video' %}
+            <span class="badge" style="background:var(--rojo-fondo);color:var(--rojo);">Video</span>
+          {% endif %}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:13px; white-space:nowrap;
+                      overflow:hidden; text-overflow:ellipsis;">
+            {{ r.titulo }}
+          </div>
+          {% if r.descripcion %}
+            <div style="font-size:11px; color:var(--gris-medio);">
+              {{ r.descripcion|truncatechars:80 }}
+            </div>
+          {% endif %}
+        </div>
+        <a href="{% url 'biblioteca:recurso_detail' r.pk %}"
+           class="btn btn--secondary btn--sm" style="flex-shrink:0;">Ver</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+{% else %}
+<div class="card" style="text-align:center; padding:3rem; color:var(--gris-medio);">
+  <div style="font-size:48px; margin-bottom:1rem;">🔍</div>
+  <div style="font-size:16px; font-weight:600; margin-bottom:0.5rem;">
+    Busca en todo el portal
+  </div>
+  <div style="font-size:14px;">
+    Escribe en el campo de arriba para buscar entre libros, tesis, profesores y recursos.
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

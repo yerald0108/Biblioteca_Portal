@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load biblioteca_extras %}
 {% block title %}Préstamos · Portal Institucional{% endblock %}
 
 {% block content %}
@@ -8,7 +9,7 @@
     <h1 class="page-header__title">Préstamos</h1>
     <p class="page-header__sub">Control de préstamos y devoluciones</p>
   </div>
-  {% if user.is_staff %}
+  {% if es_bibliotecario %}
     <a href="{% url 'biblioteca:prestamo_crear' %}" class="btn btn--primary">+ Nuevo préstamo</a>
   {% endif %}
 </div>
@@ -24,23 +25,31 @@
     <div class="stat-card__label">Vencidos sin devolver</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card__num">{{ prestamos.count }}</div>
+    <div class="stat-card__num">{{ prestamos.paginator.count }}</div>
     <div class="stat-card__label">Mostrando ahora</div>
   </div>
 </div>
 
 <!-- FILTRO -->
-<div class="card" style="margin-bottom:1rem; padding: 0.875rem 1.25rem;">
+<div class="card" style="margin-bottom:1rem; padding:0.875rem 1.25rem;">
   <form method="get" style="display:flex; gap:8px; align-items:center;">
     <span style="font-size:13px; color:var(--gris-medio);">Filtrar por estado:</span>
     <a href="{% url 'biblioteca:prestamo_list' %}"
-       class="btn btn--sm {% if not estado_filtro %}btn--primary{% else %}btn--secondary{% endif %}">Todos</a>
+       class="btn btn--sm {% if not estado_filtro %}btn--primary{% else %}btn--secondary{% endif %}">
+      Todos
+    </a>
     <a href="?estado=activo"
-       class="btn btn--sm {% if estado_filtro == 'activo' %}btn--primary{% else %}btn--secondary{% endif %}">Activos</a>
+       class="btn btn--sm {% if estado_filtro == 'activo' %}btn--primary{% else %}btn--secondary{% endif %}">
+      Activos
+    </a>
     <a href="?estado=vencido"
-       class="btn btn--sm {% if estado_filtro == 'vencido' %}btn--primary{% else %}btn--secondary{% endif %}">Vencidos</a>
+       class="btn btn--sm {% if estado_filtro == 'vencido' %}btn--primary{% else %}btn--secondary{% endif %}">
+      Vencidos
+    </a>
     <a href="?estado=devuelto"
-       class="btn btn--sm {% if estado_filtro == 'devuelto' %}btn--primary{% else %}btn--secondary{% endif %}">Devueltos</a>
+       class="btn btn--sm {% if estado_filtro == 'devuelto' %}btn--primary{% else %}btn--secondary{% endif %}">
+      Devueltos
+    </a>
   </form>
 </div>
 
@@ -55,7 +64,9 @@
           <th>Fecha préstamo</th>
           <th>Fecha límite</th>
           <th>Estado</th>
-          {% if es_bibliotecario %}<th>Acciones</th>{% endif %}
+          {% if es_bibliotecario or es_estudiante or es_profesor %}
+            <th>Acciones</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -72,7 +83,6 @@
           <td style="font-size:13px;">{{ p.fecha_prestamo|date:"d/m/Y" }}</td>
           <td style="font-size:13px;">
             {{ p.fecha_devolucion|date:"d/m/Y" }}
-            {% load biblioteca_extras %}
             {% if p.estado == 'activo' %}
               {% if p.dias_restantes <= 0 %}
                 <div style="font-size:11px; color:var(--rojo);">
@@ -108,7 +118,8 @@
                 <a href="{% url 'biblioteca:prestamo_devolver' p.pk %}"
                    class="btn btn--secondary btn--sm">Devolver</a>
                 <a href="{% url 'biblioteca:prestamo_notificar' p.pk %}"
-                   class="btn btn--sm" style="background:var(--ambar-fondo);color:var(--ambar);">
+                   class="btn btn--sm"
+                   style="background:var(--ambar-fondo); color:var(--ambar);">
                   Notificar
                 </a>
               {% else %}
@@ -118,11 +129,21 @@
               {% endif %}
             </div>
           </td>
+          {% elif es_estudiante or es_profesor %}
+          <td>
+            {% if p.estado != 'devuelto' %}
+              <a href="{% url 'biblioteca:renovacion_crear' p.pk %}"
+                 class="btn btn--secondary btn--sm">Renovar</a>
+            {% else %}
+              <span style="font-size:12px; color:var(--gris-suave);">Devuelto</span>
+            {% endif %}
+          </td>
           {% endif %}
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6" style="text-align:center; color:var(--gris-medio); padding:2rem;">
+          <td colspan="6"
+              style="text-align:center; color:var(--gris-medio); padding:2rem;">
             No hay préstamos registrados.
           </td>
         </tr>

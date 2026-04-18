@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Carnet de Biblioteca · Portal Institucional{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .navbar, .footer, .no-print { display: none !important; }
+    .main-content { padding: 0 !important; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    .carnet-wrapper { box-shadow: none !important; }
+    body { background: white !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Botones de acción (no se imprimen) -->
+<div class="no-print" style="display:flex; gap:8px; margin-bottom:1.5rem; align-items:center;">
+  <a href="{% url 'biblioteca:mi_perfil' %}" class="btn btn--secondary">← Volver al perfil</a>
+  <button onclick="window.print()" class="btn btn--primary">Imprimir carnet</button>
+</div>
+
+<div class="carnet-wrapper" style="max-width:680px; margin:0 auto;">
+
+  <!-- CARNET PRINCIPAL -->
+  <div style="background:white; border:2px solid var(--azul-oscuro);
+              border-radius:var(--radio-lg); overflow:hidden;
+              box-shadow:var(--sombra); margin-bottom:1.5rem;">
+
+    <!-- Cabecera azul -->
+    <div style="background:var(--azul-oscuro); padding:1.25rem 1.5rem;
+                display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:42px; height:42px; border-radius:var(--radio-md);
+                    background:var(--azul-claro); display:flex; align-items:center;
+                    justify-content:center; font-family:var(--fuente-titulo);
+                    font-size:20px; font-weight:700; color:var(--azul-fondo);">B</div>
+        <div>
+          <div style="font-size:14px; font-weight:600; color:var(--azul-fondo);">
+            Portal de Información Institucional
+          </div>
+          <div style="font-size:11px; color:var(--azul-palido);">
+            Biblioteca · Repositorio · Cuerpo Docente
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--azul-palido); text-align:right;">
+        <div style="font-size:18px; font-weight:700; color:var(--azul-fondo);">
+          CARNET
+        </div>
+        <div>Año {{ "now"|date:"Y" }}</div>
+      </div>
+    </div>
+
+    <!-- Cuerpo del carnet -->
+    <div style="padding:1.5rem; display:flex; gap:1.5rem; align-items:flex-start;">
+
+      <!-- Foto o iniciales -->
+      {% if perfil.foto %}
+        <img src="{{ perfil.foto.url }}" alt="Foto"
+             style="width:90px; height:110px; object-fit:cover;
+                    border-radius:var(--radio-md); border:2px solid var(--borde);
+                    flex-shrink:0;">
+      {% else %}
+        <div style="width:90px; height:110px; border-radius:var(--radio-md);
+                    background:var(--azul-fondo); border:2px solid var(--azul-palido);
+                    display:flex; align-items:center; justify-content:center;
+                    font-family:var(--fuente-titulo); font-size:32px; font-weight:700;
+                    color:var(--azul-oscuro); flex-shrink:0;">
+          {{ perfil.iniciales }}
+        </div>
+      {% endif %}
+
+      <!-- Datos personales -->
+      <div style="flex:1;">
+        <div style="font-family:var(--fuente-titulo); font-size:22px;
+                    font-weight:700; color:var(--azul-oscuro); margin-bottom:4px;">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </div>
+        <div style="font-size:13px; color:var(--gris-medio); margin-bottom:12px;">
+          {{ request.user.email|default:"Sin correo registrado" }}
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div style="background:var(--gris-fondo); border-radius:var(--radio-sm);
+                      padding:8px 10px;">
+            <div style="font-size:10px; color:var(--gris-medio); text-transform:uppercase;
+                        letter-spacing:.06em; margin-bottom:2px;">Rol</div>
+            <div style="font-size:13px; font-weight:600; color:var(--gris-texto);">
+              {{ perfil.get_rol_display }}
+            </div>
+          </div>
+          <div style="background:var(--gris-fondo); border-radius:var(--radio-sm);
+                      padding:8px 10px;">
+            <div style="font-size:10px; color:var(--gris-medio); text-transform:uppercase;
+                        letter-spacing:.06em; margin-bottom:2px;">Carnet / Matrícula</div>
+            <div style="font-size:13px; font-weight:600; color:var(--gris-texto);">
+              {{ perfil.carnet|default:"No asignado" }}
+            </div>
+          </div>
+          <div style="background:var(--gris-fondo); border-radius:var(--radio-sm);
+                      padding:8px 10px;">
+            <div style="font-size:10px; color:var(--gris-medio); text-transform:uppercase;
+                        letter-spacing:.06em; margin-bottom:2px;">Usuario</div>
+            <div style="font-size:13px; font-weight:600; color:var(--gris-texto);">
+              {{ request.user.username }}
+            </div>
+          </div>
+          <div style="background:var(--gris-fondo); border-radius:var(--radio-sm);
+                      padding:8px 10px;">
+            <div style="font-size:10px; color:var(--gris-medio); text-transform:uppercase;
+                        letter-spacing:.06em; margin-bottom:2px;">Teléfono</div>
+            <div style="font-size:13px; font-weight:600; color:var(--gris-texto);">
+              {{ perfil.telefono|default:"—" }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pie del carnet -->
+    <div style="background:var(--azul-fondo); padding:0.75rem 1.5rem;
+                border-top:1px solid var(--borde);
+                display:flex; align-items:center; justify-content:space-between;">
+      <div style="font-size:11px; color:var(--azul);">
+        Préstamos activos: <strong>{{ prestamos_activos.count }}</strong>
+      </div>
+      <div style="font-size:11px; color:var(--azul);">
+        Válido para el año en curso
+      </div>
+    </div>
+  </div>
+
+  <!-- PRÉSTAMOS ACTIVOS -->
+  {% if prestamos_activos %}
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Préstamos activos</div>
+      <span style="font-size:12px; color:var(--gris-medio);">
+        {{ prestamos_activos.count }} libro{{ prestamos_activos.count|pluralize }}
+      </span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Libro</th>
+            <th>Ejemplar</th>
+            <th>Fecha límite</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in prestamos_activos %}
+          <tr>
+            <td>
+              <div style="font-weight:600; font-size:13px;">
+                {{ p.ejemplar.libro.titulo }}
+              </div>
+              <div style="font-size:11px; color:var(--gris-medio);">
+                {{ p.ejemplar.libro.autor }}
+              </div>
+            </td>
+            <td>
+              <code style="font-size:12px; background:var(--gris-fondo);
+                           padding:2px 6px; border-radius:4px;">
+                {{ p.ejemplar.codigo }}
+              </code>
+            </td>
+            <td style="font-size:13px; white-space:nowrap;">
+              {{ p.fecha_devolucion|date:"d/m/Y" }}
+              {% if p.esta_vencido %}
+                <div style="font-size:11px; color:var(--rojo);">
+                  Vencido · {{ p.dias_retraso }} día{{ p.dias_retraso|pluralize }}
+                </div>
+              {% else %}
+                <div style="font-size:11px; color:var(--verde);">
+                  {{ p.dias_restantes }} día{{ p.dias_restantes|pluralize }} restantes
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge
+                {% if p.estado == 'activo' %}badge--disponible
+                {% else %}badge--prestado{% endif %}">
+                {{ p.get_estado_display }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center; padding:1.5rem; color:var(--gris-medio);">
+    No tienes préstamos activos en este momento.
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

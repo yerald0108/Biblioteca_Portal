@@ -46,8 +46,10 @@ urlpatterns = [
     path('mi-perfil/',                        views.mi_perfil,           name='mi_perfil'),
     path('usuarios/',                         views.usuario_list,        name='usuario_list'),
     path('usuarios/<int:pk>/editar/',         views.usuario_editar,      name='usuario_editar'),
+    path('mi-perfil/carnet/', views.carnet_biblioteca, name='carnet_biblioteca'),
     
     path('notificaciones/', views.notificaciones_list, name='notificaciones'),
+    path('buscar/', views.busqueda_global, name='busqueda_global'),
     
     # Solicitudes de préstamo
     path('solicitudes/',                        views.solicitud_list,    name='solicitud_list'),
@@ -55,4 +57,17 @@ urlpatterns = [
     path('solicitudes/<int:pk>/aprobar/',       views.solicitud_aprobar, name='solicitud_aprobar'),
     path('solicitudes/<int:pk>/rechazar/',      views.solicitud_rechazar,name='solicitud_rechazar'),
     path('libros/<int:libro_pk>/solicitar/',    views.solicitud_crear,   name='solicitud_crear'),
+    
+    # Renovaciones
+    path('renovaciones/',                         views.renovacion_list,    name='renovacion_list'),
+    path('renovaciones/mis/',                     views.mis_renovaciones,   name='mis_renovaciones'),
+    path('renovaciones/<int:pk>/aprobar/',        views.renovacion_aprobar, name='renovacion_aprobar'),
+    path('renovaciones/<int:pk>/rechazar/',       views.renovacion_rechazar,name='renovacion_rechazar'),
+    path('prestamos/<int:prestamo_pk>/renovar/',  views.renovacion_crear,   name='renovacion_crear'),
+    
+    # Categorías
+    path('categorias/',                    views.categoria_list,    name='categoria_list'),
+    path('categorias/nueva/',              views.categoria_crear,   name='categoria_crear'),
+    path('categorias/<int:pk>/editar/',    views.categoria_editar,  name='categoria_editar'),
+    path('categorias/<int:pk>/eliminar/',  views.categoria_eliminar,name='categoria_eliminar'),
 ]

@@ -40,10 +40,16 @@
               <a href="{% url 'biblioteca:mis_solicitudes' %}" class="user-dropdown__link">
                 Mis solicitudes
               </a>
+              <a href="{% url 'biblioteca:mis_renovaciones' %}" class="user-dropdown__link">
+                Mis renovaciones
+              </a>
             {% endif %}
             {% if es_bibliotecario %}
               <a href="{% url 'biblioteca:solicitud_list' %}" class="user-dropdown__link">
                 Solicitudes
+              </a>
+              <a href="{% url 'biblioteca:renovacion_list' %}" class="user-dropdown__link">
+                Renovaciones
               </a>
               <a href="{% url 'biblioteca:panel' %}" class="user-dropdown__link">Panel admin</a>
               <a href="{% url 'biblioteca:usuario_list' %}" class="user-dropdown__link">Usuarios</a>
@@ -58,7 +64,7 @@
                 Cerrar sesión
               </button>
             </form>
-            </div>
+          </div>
         </div>
       {% else %}
         <a href="{% url 'login' %}" class="btn btn--primary btn--sm">Iniciar sesión</a>

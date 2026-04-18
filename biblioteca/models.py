@@ -115,6 +115,21 @@ class Prestamo(models.Model):
         if self.esta_vencido() and self.estado == 'activo':
             self.estado = 'vencido'
         super().save(*args, **kwargs)
+        
+    @classmethod
+    def actualizar_vencidos(cls):
+        """
+        Actualiza masivamente todos los préstamos activos que han superado
+        su fecha límite. Debe llamarse periódicamente desde el comando
+        enviar_notificaciones.
+        """
+        from django.utils import timezone
+        hoy = timezone.now().date()
+        actualizados = cls.objects.filter(
+            estado='activo',
+            fecha_devolucion__lt=hoy
+        ).update(estado='vencido')
+        return actualizados
 
 class NotificacionCorreo(models.Model):
     prestamo   = models.ForeignKey(Prestamo, on_delete=models.CASCADE,
@@ -317,4 +332,38 @@ class SolicitudPrestamo(models.Model):
 
     def hay_ejemplar_disponible(self):
         return self.libro.ejemplares.filter(estado='disponible').exists()
+    
+class RenovacionPrestamo(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobada',  'Aprobada'),
+        ('rechazada', 'Rechazada'),
+    ]
+
+    prestamo        = models.ForeignKey(Prestamo, on_delete=models.CASCADE,
+                                         related_name='renovaciones')
+    usuario         = models.ForeignKey(User, on_delete=models.CASCADE,
+                                         related_name='renovaciones')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    dias_solicitados = models.PositiveIntegerField(default=7,
+                                                    verbose_name='Días de extensión')
+    motivo          = models.TextField(blank=True,
+                                        verbose_name='Motivo de la renovación')
+    estado          = models.CharField(max_length=20, choices=ESTADO_CHOICES,
+                                        default='pendiente')
+    respuesta       = models.TextField(blank=True)
+    atendida_por    = models.ForeignKey(User, on_delete=models.SET_NULL,
+                                         null=True, blank=True,
+                                         related_name='renovaciones_atendidas')
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    nueva_fecha     = models.DateField(null=True, blank=True,
+                                        verbose_name='Nueva fecha de devolución')
+
+    class Meta:
+        verbose_name        = 'Renovación de préstamo'
+        verbose_name_plural = 'Renovaciones de préstamo'
+        ordering            = ['-fecha_solicitud']
+
+    def __str__(self):
+        return f'Renovación de {self.prestamo} [{self.get_estado_display()}]'
     

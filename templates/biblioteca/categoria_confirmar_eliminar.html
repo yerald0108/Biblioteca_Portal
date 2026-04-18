@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar categoría · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:3rem auto;">
+  <div class="card">
+    <h2 style="font-family:var(--fuente-titulo); color:var(--rojo); margin-bottom:0.75rem;">
+      Eliminar categoría
+    </h2>
+    <p style="font-size:14px; color:var(--gris-texto); margin-bottom:1.5rem;">
+      ¿Estás seguro de que deseas eliminar la categoría
+      <strong>{{ categoria.nombre }}</strong>?
+      Esta acción no se puede deshacer.
+    </p>
+    <form method="post" style="display:flex; gap:8px; justify-content:flex-end;">
+      {% csrf_token %}
+      <a href="{% url 'biblioteca:categoria_list' %}" class="btn btn--secondary">Cancelar</a>
+      <button type="submit" class="btn btn--danger">Sí, eliminar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

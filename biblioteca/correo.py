@@ -526,3 +526,139 @@ def procesar_notificaciones_pendientes():
             enviados += 1
 
     return enviados
+  
+def enviar_confirmacion_renovacion(renovacion):
+    """Correo al usuario cuando su renovación es aprobada."""
+    usuario = renovacion.usuario
+    if not usuario.email:
+        return False
+
+    nombre     = usuario.get_full_name() or usuario.username
+    libro      = renovacion.prestamo.ejemplar.libro.titulo
+    nueva_fecha = renovacion.nueva_fecha.strftime('%d/%m/%Y')
+
+    asunto = f'[Biblioteca] Renovación aprobada: {libro}'
+
+    cuerpo_texto = f"""
+Estimado/a {nombre},
+
+Tu solicitud de renovación ha sido aprobada.
+
+  Libro:              {libro}
+  Nueva fecha límite: {nueva_fecha}
+
+Portal de Información Institucional
+    """
+
+    contenido_html = f"""
+      <div>
+        <div style="background:#E1F5EE; border-left:4px solid #1D9E75;
+                    border-radius:6px; padding:1rem 1.25rem; margin-bottom:1.5rem;">
+          <div style="font-size:16px; font-weight:600; color:#0F6E56; margin-bottom:4px;">
+            ¡Renovación aprobada!
+          </div>
+          <div style="font-size:13px; color:#085041;">
+            Tu préstamo ha sido extendido correctamente.
+          </div>
+        </div>
+        <p style="font-size:15px; color:#2C2C2A; margin-bottom:1.5rem;">
+          Estimado/a <strong>{nombre}</strong>,
+          tu solicitud de renovación ha sido aprobada:
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background:#F1EFE8; border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
+          <tr>
+            <td style="padding:6px 0; font-size:13px; color:#5F5E5A; width:40%;">Libro</td>
+            <td style="padding:6px 0; font-size:13px; font-weight:600; color:#2C2C2A;">{libro}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:13px; color:#5F5E5A;">Nueva fecha límite</td>
+            <td style="padding:6px 0; font-size:13px; font-weight:600; color:#1D9E75;">{nueva_fecha}</td>
+          </tr>
+        </table>
+        <div style="background:#E6F1FB; border-radius:6px; padding:0.875rem 1rem;
+                    font-size:13px; color:#185FA5;">
+          Recuerda devolver el libro antes de la nueva fecha límite.
+        </div>
+      </div>
+    """
+
+    resultado = _enviar_correo(
+        asunto, cuerpo_texto,
+        _html_base(contenido_html, asunto),
+        usuario.email
+    )
+    return resultado is True
+
+
+def enviar_rechazo_renovacion(renovacion):
+    """Correo al usuario cuando su renovación es rechazada."""
+    usuario = renovacion.usuario
+    if not usuario.email:
+        return False
+
+    nombre  = usuario.get_full_name() or usuario.username
+    libro   = renovacion.prestamo.ejemplar.libro.titulo
+    motivo  = renovacion.respuesta or 'No se especificó un motivo.'
+    fecha   = renovacion.prestamo.fecha_devolucion.strftime('%d/%m/%Y')
+
+    asunto = f'[Biblioteca] Renovación no aprobada: {libro}'
+
+    cuerpo_texto = f"""
+Estimado/a {nombre},
+
+Tu solicitud de renovación no pudo ser aprobada.
+
+  Libro:          {libro}
+  Fecha límite:   {fecha}
+  Motivo:         {motivo}
+
+Por favor devuelve el libro antes de la fecha límite.
+
+Portal de Información Institucional
+    """
+
+    contenido_html = f"""
+      <div>
+        <div style="background:#FCEBEB; border-left:4px solid #E24B4A;
+                    border-radius:6px; padding:1rem 1.25rem; margin-bottom:1.5rem;">
+          <div style="font-size:16px; font-weight:600; color:#A32D2D; margin-bottom:4px;">
+            Renovación no aprobada
+          </div>
+          <div style="font-size:13px; color:#791F1F;">
+            Tu solicitud de renovación no pudo ser procesada.
+          </div>
+        </div>
+        <p style="font-size:15px; color:#2C2C2A; margin-bottom:1rem;">
+          Estimado/a <strong>{nombre}</strong>,
+          lamentamos informarte que tu solicitud de renovación no fue aprobada:
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background:#F1EFE8; border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
+          <tr>
+            <td style="padding:6px 0; font-size:13px; color:#5F5E5A; width:30%;">Libro</td>
+            <td style="padding:6px 0; font-size:13px; font-weight:600; color:#2C2C2A;">{libro}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:13px; color:#5F5E5A;">Fecha límite</td>
+            <td style="padding:6px 0; font-size:13px; font-weight:600; color:#E24B4A;">{fecha}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:13px; color:#5F5E5A; vertical-align:top;">Motivo</td>
+            <td style="padding:6px 0; font-size:13px; color:#2C2C2A;">{motivo}</td>
+          </tr>
+        </table>
+        <div style="background:#E6F1FB; border-radius:6px; padding:0.875rem 1rem;
+                    font-size:13px; color:#185FA5;">
+          Por favor devuelve el libro antes de la fecha límite para evitar sanciones.
+          Si tienes alguna consulta, comunícate con la biblioteca directamente.
+        </div>
+      </div>
+    """
+
+    resultado = _enviar_correo(
+        asunto, cuerpo_texto,
+        _html_base(contenido_html, asunto),
+        usuario.email
+    )
+    return resultado is True

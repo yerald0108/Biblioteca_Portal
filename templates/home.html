@@ -9,12 +9,38 @@
   <p class="hero-banner__sub">
     Busca libros, tesis, docentes y recursos institucionales en un solo lugar
   </p>
-  <form method="get" action="{% url 'biblioteca:libro_list' %}" class="hero-banner__search">
+  <form method="get" action="{% url 'biblioteca:busqueda_global' %}" class="hero-banner__search">
     <input type="text" name="q"
            placeholder="Buscar por título, autor, área temática..."
            class="search-input" />
     <button type="submit" class="btn btn--primary">Buscar</button>
   </form>
+  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+    <a href="{% url 'biblioteca:libro_list' %}"
+       style="font-size:12px; color:var(--azul-palido); background:rgba(181,212,244,0.1);
+              border:1px solid rgba(181,212,244,0.25); padding:3px 10px;
+              border-radius:var(--radio-pill); text-decoration:none;">
+      📚 Libros
+    </a>
+    <a href="{% url 'biblioteca:tesis_list' %}"
+       style="font-size:12px; color:var(--azul-palido); background:rgba(181,212,244,0.1);
+              border:1px solid rgba(181,212,244,0.25); padding:3px 10px;
+              border-radius:var(--radio-pill); text-decoration:none;">
+      📄 Tesis
+    </a>
+    <a href="{% url 'biblioteca:profesor_list' %}"
+       style="font-size:12px; color:var(--azul-palido); background:rgba(181,212,244,0.1);
+              border:1px solid rgba(181,212,244,0.25); padding:3px 10px;
+              border-radius:var(--radio-pill); text-decoration:none;">
+      👤 Profesores
+    </a>
+    <a href="{% url 'biblioteca:recurso_list' %}"
+       style="font-size:12px; color:var(--azul-palido); background:rgba(181,212,244,0.1);
+              border:1px solid rgba(181,212,244,0.25); padding:3px 10px;
+              border-radius:var(--radio-pill); text-decoration:none;">
+      🎓 Recursos
+    </a>
+  </div>
 </div>
 
 <!-- ESTADÍSTICAS -->

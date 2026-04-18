@@ -118,22 +118,118 @@
 
     <!-- Botón solicitar para estudiantes y profesores -->
     {% if es_estudiante or es_profesor %}
-      {% if libro.ejemplares_disponibles %}
-        <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
-          <a href="{% url 'biblioteca:solicitud_crear' libro.pk %}"
-            class="btn btn--primary">Solicitar préstamo</a>
-          <span style="font-size:12px; color:var(--gris-medio); margin-left:8px;">
-            Tu solicitud será revisada por el bibliotecario
-          </span>
-        </div>
-      {% else %}
-        <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
-          <span class="badge badge--prestado">Sin ejemplares disponibles</span>
-        </div>
-      {% endif %}
+    {% if libro.ejemplares_disponibles %}
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
+        <a href="{% url 'biblioteca:solicitud_crear' libro.pk %}"
+          class="btn btn--primary">Solicitar préstamo</a>
+        <span style="font-size:12px; color:var(--gris-medio); margin-left:8px;">
+          Tu solicitud será revisada por el bibliotecario
+        </span>
+        {% if prestamos_usuario_count is not None %}
+          <div style="margin-top:6px; font-size:12px; color:var(--gris-medio);">
+            Tienes {{ prestamos_usuario_count }} de {{ limite_prestamos }} préstamo{{ limite_prestamos|pluralize }} activo{{ limite_prestamos|pluralize }} permitido{{ limite_prestamos|pluralize }}.
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--borde);">
+        <span class="badge badge--prestado">Sin ejemplares disponibles</span>
+      </div>
     {% endif %}
+  {% endif %}
 
   </div>
 </div>
+
+<!-- HISTORIAL DE PRÉSTAMOS (solo bibliotecario) -->
+{% if historial is not None %}
+<div style="margin-top:1.5rem;">
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Historial de préstamos</div>
+      <span style="font-size:12px; color:var(--gris-medio);">
+        Últimos {{ historial|length }} registros
+      </span>
+    </div>
+    {% if historial %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ejemplar</th>
+            <th>Usuario</th>
+            <th>Fecha préstamo</th>
+            <th>Fecha límite</th>
+            <th>Devuelto</th>
+            <th>Estado</th>
+            <th>Días</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in historial %}
+          <tr>
+            <td>
+              <code style="font-size:12px; background:var(--gris-fondo);
+                           padding:2px 6px; border-radius:4px;">
+                {{ p.ejemplar.codigo }}
+              </code>
+            </td>
+            <td>
+              <div style="font-size:13px; font-weight:600;">
+                {{ p.usuario.get_full_name|default:p.usuario.username }}
+              </div>
+              <div style="font-size:11px; color:var(--gris-medio);">
+                {{ p.usuario.email }}
+              </div>
+            </td>
+            <td style="font-size:12px; white-space:nowrap;">
+              {{ p.fecha_prestamo|date:"d/m/Y" }}
+            </td>
+            <td style="font-size:12px; white-space:nowrap;">
+              {{ p.fecha_devolucion|date:"d/m/Y" }}
+            </td>
+            <td style="font-size:12px; white-space:nowrap;">
+              {% if p.fecha_devuelto %}
+                <span style="color:var(--verde);">
+                  {{ p.fecha_devuelto|date:"d/m/Y" }}
+                </span>
+              {% else %}
+                <span style="color:var(--gris-suave);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge
+                {% if p.estado == 'activo' %}badge--disponible
+                {% elif p.estado == 'vencido' %}badge--prestado
+                {% else %}badge--info{% endif %}">
+                {{ p.get_estado_display }}
+              </span>
+            </td>
+            <td style="font-size:12px; text-align:center;">
+              {% if p.estado == 'devuelto' and p.fecha_devuelto %}
+                {% with dias=p.fecha_devolucion|timeuntil:p.fecha_devuelto %}
+                  <span style="color:var(--gris-medio);">{{ p.dias_retraso }}</span>
+                {% endwith %}
+              {% elif p.estado == 'vencido' %}
+                <span style="color:var(--rojo); font-weight:600;">
+                  +{{ p.dias_retraso }}
+                </span>
+              {% else %}
+                <span style="color:var(--gris-suave);">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="font-size:13px; color:var(--gris-medio); padding:1rem 0;">
+      Este libro no tiene historial de préstamos.
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}

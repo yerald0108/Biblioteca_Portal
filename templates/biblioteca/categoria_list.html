@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Categorías · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Categorías</h1>
+    <p class="page-header__sub">{{ categorias.count }} categoría{{ categorias.count|pluralize }} registrada{{ categorias.count|pluralize }}</p>
+  </div>
+  <a href="{% url 'biblioteca:categoria_crear' %}" class="btn btn--primary">+ Nueva categoría</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Libros</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in categorias %}
+        <tr>
+          <td style="font-weight:600;">{{ c.nombre }}</td>
+          <td style="font-size:13px; color:var(--gris-medio);">
+            {{ c.descripcion|default:"—"|truncatechars:60 }}
+          </td>
+          <td style="text-align:center;">
+            <a href="{% url 'biblioteca:libro_list' %}?categoria={{ c.pk }}"
+               class="badge badge--info" style="text-decoration:none;">
+              {{ c.total_libros }} libro{{ c.total_libros|pluralize }}
+            </a>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <a href="{% url 'biblioteca:categoria_editar' c.pk %}"
+                 class="btn btn--secondary btn--sm">Editar</a>
+              {% if c.total_libros == 0 %}
+                <a href="{% url 'biblioteca:categoria_eliminar' c.pk %}"
+                   class="btn btn--danger btn--sm">Eliminar</a>
+              {% else %}
+                <span class="btn btn--sm"
+                      style="background:var(--gris-fondo); color:var(--gris-suave);
+                             cursor:not-allowed;"
+                      title="No se puede eliminar porque tiene libros asociados">
+                  Eliminar
+                </span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="text-align:center; color:var(--gris-medio); padding:2rem;">
+            No hay categorías registradas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Rechazar renovación · Portal Institucional{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:0 auto;">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Rechazar renovación</h1>
+    </div>
+    <a href="{% url 'biblioteca:renovacion_list' %}" class="btn btn--secondary">Cancelar</a>
+  </div>
+
+  <div class="card">
+    <div style="background:var(--gris-fondo); border-radius:var(--radio-md);
+                padding:0.875rem 1rem; margin-bottom:1.25rem; font-size:14px;">
+      <strong>{{ renovacion.usuario.get_full_name|default:renovacion.usuario.username }}</strong>
+      solicitó renovar
+      <strong>{{ renovacion.prestamo.ejemplar.libro.titulo|truncatechars:40 }}</strong>
+      por {{ renovacion.dias_solicitados }} día{{ renovacion.dias_solicitados|pluralize }} más.
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Motivo del rechazo *</label>
+        {{ form.respuesta }}
+        {% if form.respuesta.errors %}
+          <div class="error-text">{{ form.respuesta.errors.0 }}</div>
+        {% endif %}
+        <div class="help-text">El usuario recibirá este mensaje por correo.</div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <a href="{% url 'biblioteca:renovacion_list' %}" class="btn btn--secondary">Cancelar</a>
+        <button type="submit" class="btn btn--danger">Confirmar rechazo</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

@@ -91,3 +91,6 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = f'Portal Biblioteca <{os.getenv("EMAIL_HOST_USER", "")}>'
 
 DEFAULT_FROM_EMAIL = 'Portal Biblioteca <biblioteca@institucion.cu>'
+
+# Límite de préstamos activos por usuario
+LIMITE_PRESTAMOS_ACTIVOS = 3

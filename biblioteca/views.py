@@ -3,10 +3,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from django.http import FileResponse, Http404
 import os
+
+from config import settings
 
 from .correo import (
     enviar_notificacion_vencimiento,
@@ -17,9 +19,9 @@ from .correo import (
 )
 from .decoradores import solo_bibliotecario, rol_requerido, get_rol
 from biblioteca.forms import RegistroUsuarioForm
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo
-from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm, SolicitudPrestamoForm, AprobarSolicitudForm, RechazarSolicitudForm
-from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes, NotificacionCorreo
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo, RenovacionPrestamo
+from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm, SolicitudPrestamoForm, AprobarSolicitudForm, RechazarSolicitudForm, AprobarRenovacionForm, RechazarRenovacionForm, RenovacionForm, CategoriaForm
+from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes, NotificacionCorreo, enviar_confirmacion_renovacion, enviar_rechazo_renovacion
 
 from django.core.paginator import Paginator
 
@@ -59,11 +61,36 @@ def libro_list(request):
 
 @login_required
 def libro_detail(request, pk):
-    libro     = get_object_or_404(Libro, pk=pk)
+    from django.conf import settings
+    libro      = get_object_or_404(Libro, pk=pk)
     ejemplares = libro.ejemplares.all()
+
+    limite = getattr(settings, 'LIMITE_PRESTAMOS_ACTIVOS', 3)
+    prestamos_usuario_count = None
+    if request.user.is_authenticated:
+        prestamos_usuario_count = Prestamo.objects.filter(
+            usuario=request.user,
+            estado__in=['activo', 'vencido']
+        ).count()
+
+    # Historial de préstamos del libro (solo para bibliotecario)
+    historial = None
+    if request.user.is_staff or (
+        hasattr(request.user, 'perfil') and
+        request.user.perfil.rol == 'bibliotecario'
+    ):
+        historial = Prestamo.objects.filter(
+            ejemplar__libro=libro
+        ).select_related(
+            'usuario', 'ejemplar', 'registrado_por'
+        ).order_by('-fecha_prestamo')[:20]
+
     return render(request, 'biblioteca/libro_detail.html', {
-        'libro':     libro,
-        'ejemplares': ejemplares,
+        'libro':                   libro,
+        'ejemplares':              ejemplares,
+        'prestamos_usuario_count': prestamos_usuario_count,
+        'limite_prestamos':        limite,
+        'historial':               historial,
     })
 
 @solo_bibliotecario
@@ -539,6 +566,9 @@ def panel_bibliotecario(request):
     if not request.user.is_staff:
         messages.error(request, 'Acceso restringido al bibliotecario.')
         return redirect('home')
+    
+    # Actualizar estados vencidos cada vez que se carga el panel
+    Prestamo.actualizar_vencidos()
 
     import json
     from django.db.models import Count
@@ -556,6 +586,7 @@ def panel_bibliotecario(request):
     }
     
     solicitudes_pendientes = SolicitudPrestamo.objects.filter(estado='pendiente').count()
+    renovaciones_pendientes = RenovacionPrestamo.objects.filter(estado='pendiente').count()
 
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
@@ -634,6 +665,7 @@ def panel_bibliotecario(request):
         'datos_categorias_json':    datos_categorias_json,
         'datos_inventario_json':    datos_inventario_json,
         'solicitudes_pendientes':   solicitudes_pendientes,
+        'renovaciones_pendientes': renovaciones_pendientes,
         
         'ultimas_notificaciones': ultimas_notificaciones,
         'total_notificaciones':   total_notificaciones,
@@ -770,6 +802,56 @@ def solicitud_crear(request, libro_pk):
     if not libro.ejemplares_disponibles():
         messages.error(request, 'Este libro no tiene ejemplares disponibles.')
         return redirect('biblioteca:libro_detail', pk=libro_pk)
+    
+    @rol_requerido('estudiante', 'profesor', 'bibliotecario')
+    def solicitud_crear(request, libro_pk):
+        libro = get_object_or_404(Libro, pk=libro_pk)
+
+        if not libro.ejemplares_disponibles():
+            messages.error(request, 'Este libro no tiene ejemplares disponibles.')
+            return redirect('biblioteca:libro_detail', pk=libro_pk)
+
+        # ── NUEVO: verificar límite de préstamos activos ──────────
+        from django.conf import settings
+        limite = getattr(settings, 'LIMITE_PRESTAMOS_ACTIVOS', 3)
+        prestamos_activos = Prestamo.objects.filter(
+            usuario=request.user,
+            estado__in=['activo', 'vencido']
+        ).count()
+        if prestamos_activos >= limite:
+            messages.error(
+                request,
+                f'Has alcanzado el límite de {limite} préstamos activos simultáneos. '
+                f'Debes devolver un libro antes de solicitar otro.'
+            )
+            return redirect('biblioteca:libro_detail', pk=libro_pk)
+        # ─────────────────────────────────────────────────────────
+
+        solicitud_existente = SolicitudPrestamo.objects.filter(
+            usuario=request.user,
+            libro=libro,
+            estado='pendiente'
+        ).exists()
+        if solicitud_existente:
+            messages.warning(request, 'Ya tienes una solicitud pendiente para este libro.')
+            return redirect('biblioteca:libro_detail', pk=libro_pk)
+
+        form = SolicitudPrestamoForm(request.POST or None)
+        if form.is_valid():
+            solicitud          = form.save(commit=False)
+            solicitud.libro    = libro
+            solicitud.usuario  = request.user
+            solicitud.save()
+            messages.success(
+                request,
+                'Solicitud enviada correctamente. El bibliotecario la revisará pronto.'
+            )
+            return redirect('biblioteca:mis_solicitudes')
+
+        return render(request, 'biblioteca/solicitud_form.html', {
+            'form':  form,
+            'libro': libro,
+        })
 
     # Verificar que no tenga una solicitud pendiente para este libro
     solicitud_existente = SolicitudPrestamo.objects.filter(
@@ -900,4 +982,251 @@ def solicitud_rechazar(request, pk):
     return render(request, 'biblioteca/solicitud_rechazar.html', {
         'form':      form,
         'solicitud': solicitud,
+    })
+    
+@rol_requerido('estudiante', 'profesor', 'bibliotecario')
+def renovacion_crear(request, prestamo_pk):
+    prestamo = get_object_or_404(Prestamo, pk=prestamo_pk, usuario=request.user)
+
+    # Solo se puede renovar si está activo o vencido
+    if prestamo.estado == 'devuelto':
+        messages.error(request, 'Este préstamo ya fue devuelto.')
+        return redirect('biblioteca:prestamo_list')
+
+    # Verificar que no tenga una renovación pendiente
+    renovacion_pendiente = RenovacionPrestamo.objects.filter(
+        prestamo=prestamo,
+        estado='pendiente'
+    ).exists()
+    if renovacion_pendiente:
+        messages.warning(request, 'Ya tienes una solicitud de renovación pendiente para este préstamo.')
+        return redirect('biblioteca:prestamo_list')
+
+    form = RenovacionForm(request.POST or None)
+    if form.is_valid():
+        renovacion          = form.save(commit=False)
+        renovacion.prestamo = prestamo
+        renovacion.usuario  = request.user
+        renovacion.save()
+        messages.success(
+            request,
+            'Solicitud de renovación enviada. El bibliotecario la revisará pronto.'
+        )
+        return redirect('biblioteca:mis_renovaciones')
+
+    return render(request, 'biblioteca/renovacion_form.html', {
+        'form':     form,
+        'prestamo': prestamo,
+    })
+
+
+@login_required
+def mis_renovaciones(request):
+    renovaciones = RenovacionPrestamo.objects.filter(
+        usuario=request.user
+    ).select_related(
+        'prestamo__ejemplar__libro'
+    ).order_by('-fecha_solicitud')
+
+    return render(request, 'biblioteca/mis_renovaciones.html', {
+        'renovaciones': paginar(renovaciones, request, 10),
+    })
+
+
+@solo_bibliotecario
+def renovacion_list(request):
+    estado_filtro = request.GET.get('estado', 'pendiente')
+    renovaciones  = RenovacionPrestamo.objects.select_related(
+        'prestamo__ejemplar__libro', 'usuario'
+    ).all()
+
+    if estado_filtro:
+        renovaciones = renovaciones.filter(estado=estado_filtro)
+
+    return render(request, 'biblioteca/renovacion_list.html', {
+        'renovaciones':     paginar(renovaciones, request, 15),
+        'estado_filtro':    estado_filtro,
+        'total_pendientes': RenovacionPrestamo.objects.filter(estado='pendiente').count(),
+    })
+
+
+@solo_bibliotecario
+def renovacion_aprobar(request, pk):
+    renovacion = get_object_or_404(RenovacionPrestamo, pk=pk, estado='pendiente')
+    form       = AprobarRenovacionForm(
+        request.POST or None,
+        prestamo=renovacion.prestamo
+    )
+
+    if form.is_valid():
+        nueva_fecha = form.cleaned_data['nueva_fecha']
+        respuesta   = form.cleaned_data.get('respuesta', '')
+
+        # Actualizar la fecha del préstamo
+        renovacion.prestamo.fecha_devolucion = nueva_fecha
+        if renovacion.prestamo.estado == 'vencido':
+            renovacion.prestamo.estado = 'activo'
+        renovacion.prestamo.save()
+
+        # Actualizar la renovación
+        renovacion.estado          = 'aprobada'
+        renovacion.nueva_fecha     = nueva_fecha
+        renovacion.respuesta       = respuesta
+        renovacion.atendida_por    = request.user
+        renovacion.fecha_respuesta = timezone.now()
+        renovacion.save()
+
+        # Enviar correo
+        enviar_confirmacion_renovacion(renovacion)
+
+        messages.success(
+            request,
+            f'Renovación aprobada. Nueva fecha: {nueva_fecha.strftime("%d/%m/%Y")}.'
+        )
+        return redirect('biblioteca:renovacion_list')
+
+    return render(request, 'biblioteca/renovacion_aprobar.html', {
+        'form':       form,
+        'renovacion': renovacion,
+    })
+
+
+@solo_bibliotecario
+def renovacion_rechazar(request, pk):
+    renovacion = get_object_or_404(RenovacionPrestamo, pk=pk, estado='pendiente')
+    form       = RechazarRenovacionForm(request.POST or None)
+
+    if form.is_valid():
+        renovacion.estado          = 'rechazada'
+        renovacion.respuesta       = form.cleaned_data['respuesta']
+        renovacion.atendida_por    = request.user
+        renovacion.fecha_respuesta = timezone.now()
+        renovacion.save()
+
+        # Enviar correo
+        enviar_rechazo_renovacion(renovacion)
+
+        messages.success(request, 'Renovación rechazada.')
+        return redirect('biblioteca:renovacion_list')
+
+    return render(request, 'biblioteca/renovacion_rechazar.html', {
+        'form':       form,
+        'renovacion': renovacion,
+    })
+    
+@solo_bibliotecario
+def categoria_list(request):
+    categorias = Categoria.objects.annotate(
+        total_libros=Count('libros')
+    ).order_by('nombre')
+    return render(request, 'biblioteca/categoria_list.html', {
+        'categorias': categorias,
+    })
+
+
+@solo_bibliotecario
+def categoria_crear(request):
+    form = CategoriaForm(request.POST or None)
+    if form.is_valid():
+        categoria = form.save()
+        messages.success(request, f'Categoría "{categoria.nombre}" creada.')
+        return redirect('biblioteca:categoria_list')
+    return render(request, 'biblioteca/categoria_form.html', {
+        'form':   form,
+        'titulo': 'Nueva categoría',
+        'accion': 'Crear categoría',
+    })
+
+
+@solo_bibliotecario
+def categoria_editar(request, pk):
+    categoria = get_object_or_404(Categoria, pk=pk)
+    form      = CategoriaForm(request.POST or None, instance=categoria)
+    if form.is_valid():
+        form.save()
+        messages.success(request, f'Categoría "{categoria.nombre}" actualizada.')
+        return redirect('biblioteca:categoria_list')
+    return render(request, 'biblioteca/categoria_form.html', {
+        'form':      form,
+        'categoria': categoria,
+        'titulo':    'Editar categoría',
+        'accion':    'Guardar cambios',
+    })
+
+
+@solo_bibliotecario
+def categoria_eliminar(request, pk):
+    categoria = get_object_or_404(Categoria, pk=pk)
+    if request.method == 'POST':
+        if categoria.libros.count() > 0:
+            messages.error(
+                request,
+                f'No se puede eliminar "{categoria.nombre}" porque tiene '
+                f'{categoria.libros.count()} libro(s) asociado(s).'
+            )
+            return redirect('biblioteca:categoria_list')
+        nombre = categoria.nombre
+        categoria.delete()
+        messages.success(request, f'Categoría "{nombre}" eliminada.')
+        return redirect('biblioteca:categoria_list')
+    return render(request, 'biblioteca/categoria_confirmar_eliminar.html', {
+        'categoria': categoria,
+    })
+    
+@login_required
+def carnet_biblioteca(request):
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
+    prestamos_activos = Prestamo.objects.filter(
+        usuario=request.user,
+        estado__in=['activo', 'vencido']
+    ).select_related('ejemplar__libro').order_by('fecha_devolucion')
+
+    return render(request, 'biblioteca/carnet.html', {
+        'perfil':           perfil,
+        'prestamos_activos': prestamos_activos,
+    })
+    
+@login_required
+def busqueda_global(request):
+    q = request.GET.get('q', '').strip()
+
+    libros     = []
+    tesis      = []
+    profesores = []
+    recursos   = []
+
+    if q:
+        libros = Libro.objects.filter(
+            Q(titulo__icontains=q) |
+            Q(autor__icontains=q)  |
+            Q(isbn__icontains=q)
+        ).select_related('categoria')[:8]
+
+        tesis = Tesis.objects.filter(
+            Q(titulo__icontains=q)  |
+            Q(autor__icontains=q)   |
+            Q(area__icontains=q)    |
+            Q(resumen__icontains=q)
+        )[:6]
+
+        profesores = Profesor.objects.filter(
+            Q(nombre__icontains=q)       |
+            Q(apellidos__icontains=q)    |
+            Q(especialidad__icontains=q)
+        ).filter(activo=True)[:6]
+
+        recursos = Recurso.objects.filter(
+            Q(titulo__icontains=q)       |
+            Q(descripcion__icontains=q)
+        ).filter(publicado=True)[:6]
+
+    total = len(libros) + len(tesis) + len(profesores) + len(recursos)
+
+    return render(request, 'biblioteca/busqueda_global.html', {
+        'q':          q,
+        'libros':     libros,
+        'tesis':      tesis,
+        'profesores': profesores,
+        'recursos':   recursos,
+        'total':      total,
     })
