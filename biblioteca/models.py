@@ -272,14 +272,21 @@ class PerfilUsuario(models.Model):
         ('visitante',    'Visitante'),
     ]
 
-    usuario  = models.OneToOneField(User, on_delete=models.CASCADE,
-                                     related_name='perfil')
-    rol      = models.CharField(max_length=20, choices=ROL_CHOICES,
-                                 default='visitante')
-    carnet   = models.CharField(max_length=50, blank=True,
-                                 verbose_name='Carnet / Matrícula')
-    telefono = models.CharField(max_length=20, blank=True)
-    foto     = models.ImageField(upload_to='perfiles/', null=True, blank=True)
+    usuario         = models.OneToOneField(User, on_delete=models.CASCADE,
+                                            related_name='perfil')
+    rol             = models.CharField(max_length=20, choices=ROL_CHOICES,
+                                        default='visitante')
+    rol_solicitado  = models.CharField(max_length=20, choices=ROL_CHOICES,
+                                        null=True, blank=True,
+                                        verbose_name='Rol solicitado')
+    rol_aprobado    = models.BooleanField(default=False,
+                                           verbose_name='Rol aprobado por bibliotecario')
+    motivo_solicitud = models.TextField(blank=True,
+                                         verbose_name='Motivo de la solicitud de rol')
+    carnet          = models.CharField(max_length=50, blank=True,
+                                        verbose_name='Carnet / Matrícula')
+    telefono        = models.CharField(max_length=20, blank=True)
+    foto            = models.ImageField(upload_to='perfiles/', null=True, blank=True)
 
     class Meta:
         verbose_name        = 'Perfil de usuario'
@@ -290,6 +297,9 @@ class PerfilUsuario(models.Model):
 
     def es_bibliotecario(self):
         return self.rol == 'bibliotecario'
+
+    def tiene_solicitud_pendiente(self):
+        return self.rol_solicitado is not None and not self.rol_aprobado
 
     def iniciales(self):
         nombre = self.usuario.get_full_name() or self.usuario.username

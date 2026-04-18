@@ -53,6 +53,14 @@
     <div class="stat-card__label">Renovaciones pendientes</div>
     <div class="stat-card__delta" style="color:var(--azul);">Ver pendientes →</div>
   </div>
+  <div class="stat-card" style="cursor:pointer;"
+      onclick='window.location="{% url "biblioteca:solicitudes_rol" %}"'>
+    <div class="stat-card__num" style="color:var(--verde);">
+      {{ roles_pendientes }}
+    </div>
+    <div class="stat-card__label">Roles por aprobar</div>
+    <div class="stat-card__delta" style="color:var(--verde);">Ver solicitudes →</div>
+  </div>
 </div>
 
 <!-- GRÁFICAS -->
@@ -156,6 +164,20 @@
           <div style="font-size:11px; color:var(--gris-medio);">Categorías de libros</div>
         </div>
       </a>
+      <a href="{% url 'biblioteca:solicitudes_rol' %}"
+        style="display:flex; align-items:center; gap:10px; padding:10px;
+              border:1px solid var(--borde); border-radius:var(--radio-md);
+              text-decoration:none; color:var(--gris-texto);">
+      <div style="width:36px; height:36px; background:var(--verde-fondo);
+                  border-radius:var(--radio-sm); display:flex; align-items:center;
+                  justify-content:center; font-size:16px;">🎓</div>
+      <div>
+        <div style="font-size:13px; font-weight:600;">Solicitudes de rol</div>
+        <div style="font-size:11px; color:var(--gris-medio);">
+          Aprobar nuevos usuarios
+        </div>
+      </div>
+    </a>
     </div>
   </div>
 

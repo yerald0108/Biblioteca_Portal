@@ -193,9 +193,26 @@ class GestionUsuarioForm(forms.ModelForm):
 
 
 class RegistroUsuarioForm(UserCreationForm):
-    first_name = forms.CharField(max_length=150, required=True,  label='Nombre')
-    last_name  = forms.CharField(max_length=150, required=True,  label='Apellidos')
-    email      = forms.EmailField(required=True, label='Correo electrónico')
+    ROL_OPCIONES = [
+        ('estudiante', 'Estudiante'),
+        ('profesor',   'Profesor'),
+    ]
+
+    first_name       = forms.CharField(max_length=150, required=True, label='Nombre')
+    last_name        = forms.CharField(max_length=150, required=True, label='Apellidos')
+    email            = forms.EmailField(required=True, label='Correo electrónico')
+    rol_solicitado   = forms.ChoiceField(
+        choices=ROL_OPCIONES,
+        required=True,
+        label='Soy...',
+        help_text='El bibliotecario confirmará tu rol antes de que puedas operar.'
+    )
+    motivo_solicitud = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3}),
+        label='Motivo o información adicional',
+        help_text='Opcional. Por ejemplo: tu número de matrícula, departamento, etc.'
+    )
 
     class Meta:
         model  = User
@@ -205,12 +222,19 @@ class RegistroUsuarioForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
-            field.widget.attrs['class'] = 'form-control'
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-control'
             if field.required:
                 field.widget.attrs['required'] = 'required'
         self.fields['username'].help_text = 'Solo letras, números y @/./+/-/_'
         self.fields['password1'].help_text = 'Mínimo 8 caracteres.'
         self.fields['password2'].help_text = ''
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').lower().strip()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Ya existe una cuenta con este correo.')
+        return email
 
 
 class SolicitudPrestamoForm(forms.ModelForm):

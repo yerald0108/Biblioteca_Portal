@@ -8,7 +8,11 @@ from .models import PerfilUsuario
 def crear_perfil(sender, instance, created, **kwargs):
     if created:
         rol = 'bibliotecario' if instance.is_staff else 'visitante'
-        PerfilUsuario.objects.create(usuario=instance, rol=rol)
+        PerfilUsuario.objects.create(
+            usuario=instance,
+            rol=rol,
+            rol_aprobado=instance.is_staff
+        )
 
 
 @receiver(post_save, sender=User)

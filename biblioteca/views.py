@@ -587,6 +587,10 @@ def panel_bibliotecario(request):
     
     solicitudes_pendientes = SolicitudPrestamo.objects.filter(estado='pendiente').count()
     renovaciones_pendientes = RenovacionPrestamo.objects.filter(estado='pendiente').count()
+    roles_pendientes = PerfilUsuario.objects.filter(
+        rol_solicitado__isnull=False,
+        rol_aprobado=False
+    ).count()
 
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
@@ -666,6 +670,7 @@ def panel_bibliotecario(request):
         'datos_inventario_json':    datos_inventario_json,
         'solicitudes_pendientes':   solicitudes_pendientes,
         'renovaciones_pendientes': renovaciones_pendientes,
+        'roles_pendientes': roles_pendientes,
         
         'ultimas_notificaciones': ultimas_notificaciones,
         'total_notificaciones':   total_notificaciones,
@@ -1230,3 +1235,55 @@ def busqueda_global(request):
         'recursos':   recursos,
         'total':      total,
     })
+    
+@solo_bibliotecario
+def solicitudes_rol_list(request):
+    """Lista de usuarios con solicitud de rol pendiente."""
+    pendientes = PerfilUsuario.objects.filter(
+        rol_solicitado__isnull=False,
+        rol_aprobado=False
+    ).select_related('usuario').order_by('usuario__date_joined')
+
+    aprobados = PerfilUsuario.objects.filter(
+        rol_aprobado=True,
+        rol_solicitado__isnull=False
+    ).select_related('usuario').order_by('-usuario__date_joined')[:10]
+
+    return render(request, 'biblioteca/solicitudes_rol.html', {
+        'pendientes': pendientes,
+        'aprobados':  aprobados,
+    })
+
+
+@solo_bibliotecario
+def aprobar_rol(request, pk):
+    perfil = get_object_or_404(PerfilUsuario, pk=pk)
+    if request.method == 'POST':
+        rol_nuevo = request.POST.get('rol', perfil.rol_solicitado)
+        perfil.rol          = rol_nuevo
+        perfil.rol_aprobado = True
+        perfil.save()
+        messages.success(
+            request,
+            f'Rol "{perfil.get_rol_display()}" aprobado para '
+            f'{perfil.usuario.get_full_name() or perfil.usuario.username}.'
+        )
+    return redirect('biblioteca:solicitudes_rol')
+
+
+@solo_bibliotecario
+def rechazar_rol(request, pk):
+    perfil = get_object_or_404(PerfilUsuario, pk=pk)
+    if request.method == 'POST':
+        perfil.rol_solicitado    = None
+        perfil.motivo_solicitud  = ''
+        perfil.rol               = 'visitante'
+        perfil.rol_aprobado      = False
+        perfil.save()
+        messages.success(
+            request,
+            f'Solicitud de rol rechazada. '
+            f'{perfil.usuario.get_full_name() or perfil.usuario.username} '
+            f'queda como visitante.'
+        )
+    return redirect('biblioteca:solicitudes_rol')

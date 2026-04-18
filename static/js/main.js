@@ -1,5 +1,6 @@
-// Cerrar alertas automáticamente después de 4 segundos
 document.addEventListener('DOMContentLoaded', function () {
+
+  // ── CERRAR ALERTAS AUTOMÁTICAMENTE ───────────────────────
   document.querySelectorAll('.alert').forEach(function (alert) {
     setTimeout(function () {
       alert.style.opacity = '0';
@@ -7,36 +8,52 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(function () { alert.remove(); }, 400);
     }, 4000);
   });
-});
 
-// ── VALIDACIÓN DEL LADO DEL CLIENTE ─────────────────────────
-document.addEventListener('DOMContentLoaded', function () {
+  // ── MENÚ DE USUARIO CON CLICK ─────────────────────────────
+  const userAvatar   = document.querySelector('.user-avatar');
+  const userDropdown = document.querySelector('.user-dropdown');
+  const userMenu     = document.querySelector('.user-menu');
 
-  // Marcar campos requeridos vacíos al intentar enviar
+  if (userAvatar && userDropdown) {
+
+    userAvatar.addEventListener('click', function (e) {
+      e.stopPropagation();
+      userDropdown.classList.toggle('abierto');
+    });
+
+    document.addEventListener('click', function (e) {
+      if (userMenu && !userMenu.contains(e.target)) {
+        userDropdown.classList.remove('abierto');
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        userDropdown.classList.remove('abierto');
+      }
+    });
+  }
+
+  // ── VALIDACIÓN DEL LADO DEL CLIENTE ──────────────────────
   document.querySelectorAll('form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
       let valido = true;
 
       form.querySelectorAll('input, select, textarea').forEach(function (campo) {
-        // Limpiar error previo
         campo.style.borderColor = '';
         const errorPrevio = campo.parentElement.querySelector('.error-cliente');
         if (errorPrevio) errorPrevio.remove();
 
-        // Validar requeridos
         if (campo.hasAttribute('required') && !campo.value.trim()) {
           valido = false;
           campo.style.borderColor = 'var(--rojo)';
           const error = document.createElement('div');
           error.className = 'error-texto error-cliente';
-          error.style.fontSize = '12px';
-          error.style.color = 'var(--rojo)';
-          error.style.marginTop = '4px';
+          error.style.cssText = 'font-size:12px; color:var(--rojo); margin-top:4px;';
           error.textContent = 'Este campo es obligatorio.';
           campo.parentElement.appendChild(error);
         }
 
-        // Validar email
         if (campo.type === 'email' && campo.value.trim()) {
           const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(campo.value);
           if (!emailValido) {
@@ -44,25 +61,20 @@ document.addEventListener('DOMContentLoaded', function () {
             campo.style.borderColor = 'var(--rojo)';
             const error = document.createElement('div');
             error.className = 'error-texto error-cliente';
-            error.style.fontSize = '12px';
-            error.style.color = 'var(--rojo)';
-            error.style.marginTop = '4px';
+            error.style.cssText = 'font-size:12px; color:var(--rojo); margin-top:4px;';
             error.textContent = 'Introduce un correo electrónico válido.';
             campo.parentElement.appendChild(error);
           }
         }
 
-        // Validar fechas mínimas
-        if (campo.type === 'date' && campo.value) {
+        if (campo.type === 'date' && campo.value && campo.dataset.minHoy !== undefined) {
           const hoy = new Date().toISOString().split('T')[0];
-          if (campo.dataset.minHoy !== undefined && campo.value <= hoy) {
+          if (campo.value <= hoy) {
             valido = false;
             campo.style.borderColor = 'var(--rojo)';
             const error = document.createElement('div');
             error.className = 'error-texto error-cliente';
-            error.style.fontSize = '12px';
-            error.style.color = 'var(--rojo)';
-            error.style.marginTop = '4px';
+            error.style.cssText = 'font-size:12px; color:var(--rojo); margin-top:4px;';
             error.textContent = 'La fecha debe ser posterior a hoy.';
             campo.parentElement.appendChild(error);
           }
@@ -71,7 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (!valido) {
         e.preventDefault();
-        // Hacer scroll al primer error
         const primerError = form.querySelector('[style*="var(--rojo)"]');
         if (primerError) {
           primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -80,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    // Limpiar error visual cuando el usuario empieza a escribir
     form.querySelectorAll('input, select, textarea').forEach(function (campo) {
       campo.addEventListener('input', function () {
         campo.style.borderColor = '';
@@ -89,4 +99,5 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   });
+
 });
