@@ -19,9 +19,17 @@ from .correo import (
 )
 from .decoradores import solo_bibliotecario, rol_requerido, get_rol
 from biblioteca.forms import RegistroUsuarioForm
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo, RenovacionPrestamo
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo, RenovacionPrestamo, NotificacionCorreo
 from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm, SolicitudPrestamoForm, AprobarSolicitudForm, RechazarSolicitudForm, AprobarRenovacionForm, RechazarRenovacionForm, RenovacionForm, CategoriaForm
-from .correo import enviar_notificacion_vencimiento, procesar_notificaciones_pendientes, NotificacionCorreo, enviar_confirmacion_renovacion, enviar_rechazo_renovacion
+from .correo import (
+    enviar_notificacion_vencimiento,
+    enviar_recordatorio,
+    enviar_confirmacion_prestamo,
+    enviar_rechazo_solicitud,
+    enviar_confirmacion_renovacion,
+    enviar_rechazo_renovacion,
+    procesar_notificaciones_pendientes,
+)
 
 from django.core.paginator import Paginator
 
@@ -291,35 +299,26 @@ def tesis_detail(request, pk):
 
 @rol_requerido('bibliotecario', 'profesor')
 def tesis_crear(request):
-    if not request.user.is_staff:
-        messages.error(request, 'No tienes permiso para registrar tesis.')
-        return redirect('biblioteca:tesis_list')
-
     form = TesisForm(request.POST or None, request.FILES or None)
     if form.is_valid():
         tesis = form.save()
         messages.success(request, f'Tesis "{tesis.titulo}" registrada correctamente.')
         return redirect('biblioteca:tesis_detail', pk=tesis.pk)
-
     return render(request, 'biblioteca/tesis_form.html', {
         'form':   form,
         'titulo': 'Registrar tesis',
         'accion': 'Guardar tesis',
     })
 
+
 @rol_requerido('bibliotecario', 'profesor')
 def tesis_editar(request, pk):
-    if not request.user.is_staff:
-        messages.error(request, 'No tienes permiso para editar tesis.')
-        return redirect('biblioteca:tesis_list')
-
     tesis = get_object_or_404(Tesis, pk=pk)
     form  = TesisForm(request.POST or None, request.FILES or None, instance=tesis)
     if form.is_valid():
         form.save()
-        messages.success(request, f'Tesis actualizada correctamente.')
+        messages.success(request, 'Tesis actualizada correctamente.')
         return redirect('biblioteca:tesis_detail', pk=tesis.pk)
-
     return render(request, 'biblioteca/tesis_form.html', {
         'form':   form,
         'tesis':  tesis,
@@ -742,27 +741,6 @@ def usuario_editar(request, pk):
         'usuario': usuario,
         'perfil':  perfil,
     })
-    
-@login_required
-def home(request):
-    context = {
-        'total_libros':     Libro.objects.count(),
-        'total_prestamos':  Prestamo.objects.filter(estado='activo').count(),
-        'total_tesis':      Tesis.objects.filter(disponible=True).count(),
-        'total_profesores': Profesor.objects.filter(activo=True).count(),
-    }
-    return render(request, 'home.html', context)
-
-
-def registro(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-    form = RegistroUsuarioForm(request.POST or None)
-    if form.is_valid():
-        usuario = form.save()
-        login(request, usuario)
-        return redirect('home')
-    return render(request, 'registration/registro.html', {'form': form})
 
 @solo_bibliotecario
 def notificaciones_list(request):
@@ -803,62 +781,24 @@ def notificaciones_list(request):
 def solicitud_crear(request, libro_pk):
     libro = get_object_or_404(Libro, pk=libro_pk)
 
-    # Verificar que el libro tenga ejemplares disponibles
     if not libro.ejemplares_disponibles():
         messages.error(request, 'Este libro no tiene ejemplares disponibles.')
         return redirect('biblioteca:libro_detail', pk=libro_pk)
-    
-    @rol_requerido('estudiante', 'profesor', 'bibliotecario')
-    def solicitud_crear(request, libro_pk):
-        libro = get_object_or_404(Libro, pk=libro_pk)
 
-        if not libro.ejemplares_disponibles():
-            messages.error(request, 'Este libro no tiene ejemplares disponibles.')
-            return redirect('biblioteca:libro_detail', pk=libro_pk)
+    from django.conf import settings
+    limite = getattr(settings, 'LIMITE_PRESTAMOS_ACTIVOS', 3)
+    prestamos_activos = Prestamo.objects.filter(
+        usuario=request.user,
+        estado__in=['activo', 'vencido']
+    ).count()
+    if prestamos_activos >= limite:
+        messages.error(
+            request,
+            f'Has alcanzado el límite de {limite} préstamos activos simultáneos. '
+            f'Debes devolver un libro antes de solicitar otro.'
+        )
+        return redirect('biblioteca:libro_detail', pk=libro_pk)
 
-        # ── NUEVO: verificar límite de préstamos activos ──────────
-        from django.conf import settings
-        limite = getattr(settings, 'LIMITE_PRESTAMOS_ACTIVOS', 3)
-        prestamos_activos = Prestamo.objects.filter(
-            usuario=request.user,
-            estado__in=['activo', 'vencido']
-        ).count()
-        if prestamos_activos >= limite:
-            messages.error(
-                request,
-                f'Has alcanzado el límite de {limite} préstamos activos simultáneos. '
-                f'Debes devolver un libro antes de solicitar otro.'
-            )
-            return redirect('biblioteca:libro_detail', pk=libro_pk)
-        # ─────────────────────────────────────────────────────────
-
-        solicitud_existente = SolicitudPrestamo.objects.filter(
-            usuario=request.user,
-            libro=libro,
-            estado='pendiente'
-        ).exists()
-        if solicitud_existente:
-            messages.warning(request, 'Ya tienes una solicitud pendiente para este libro.')
-            return redirect('biblioteca:libro_detail', pk=libro_pk)
-
-        form = SolicitudPrestamoForm(request.POST or None)
-        if form.is_valid():
-            solicitud          = form.save(commit=False)
-            solicitud.libro    = libro
-            solicitud.usuario  = request.user
-            solicitud.save()
-            messages.success(
-                request,
-                'Solicitud enviada correctamente. El bibliotecario la revisará pronto.'
-            )
-            return redirect('biblioteca:mis_solicitudes')
-
-        return render(request, 'biblioteca/solicitud_form.html', {
-            'form':  form,
-            'libro': libro,
-        })
-
-    # Verificar que no tenga una solicitud pendiente para este libro
     solicitud_existente = SolicitudPrestamo.objects.filter(
         usuario=request.user,
         libro=libro,
@@ -876,8 +816,7 @@ def solicitud_crear(request, libro_pk):
         solicitud.save()
         messages.success(
             request,
-            f'Solicitud enviada correctamente. '
-            f'El bibliotecario la revisará pronto.'
+            'Solicitud enviada correctamente. El bibliotecario la revisará pronto.'
         )
         return redirect('biblioteca:mis_solicitudes')
 

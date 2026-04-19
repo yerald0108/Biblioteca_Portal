@@ -101,13 +101,6 @@ class Prestamo(models.Model):
         return delta.days
     
     def dias_retraso(self):
-        """Devuelve los días de retraso si el préstamo está vencido, si no 0."""
-        if not self.esta_vencido():
-            return 0
-        delta = timezone.now().date() - self.fecha_devolucion
-        return delta.days
-    
-    def dias_retraso(self):
         delta = timezone.now().date() - self.fecha_devolucion
         return delta.days if delta.days > 0 else 0
 

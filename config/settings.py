@@ -63,8 +63,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGOUT_REDIRECT_URL = '/'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LANGUAGE_CODE = 'es-cu'
@@ -72,25 +70,17 @@ TIME_ZONE = 'America/Havana'
 USE_I18N = True
 USE_TZ = True
 
-# Login
-LOGIN_URL = '/auth/login/'
-LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/auth/login/'
 
 # ── CORREO ──
-# Durante desarrollo usa la consola (imprime el email en la terminal)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# ── CORREO ──
-EMAIL_BACKEND    = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST       = 'smtp.gmail.com'
-EMAIL_PORT       = 587
-EMAIL_USE_TLS    = True
-EMAIL_HOST_USER  = os.getenv('EMAIL_HOST_USER', '')
+# Para desarrollo: cambia a console.EmailBackend para ver correos en terminal
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = f'Portal Biblioteca <{os.getenv("EMAIL_HOST_USER", "")}>'
-
-DEFAULT_FROM_EMAIL = 'Portal Biblioteca <biblioteca@institucion.cu>'
+DEFAULT_FROM_EMAIL  = f'Portal Biblioteca <{os.getenv("EMAIL_HOST_USER", "")}>'
 
 # Límite de préstamos activos por usuario
 LIMITE_PRESTAMOS_ACTIVOS = 3

@@ -92,6 +92,7 @@ img { max-width: 100%; }
 }
 /* ── MENÚ DE USUARIO ── */
 .user-menu { position: relative; }
+
 .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--azul); border: 1px solid var(--azul-claro);
@@ -100,6 +101,7 @@ img { max-width: 100%; }
   cursor: pointer;
   user-select: none;
 }
+
 .user-dropdown {
   position: absolute; right: 0; top: calc(100% + 8px);
   background: var(--blanco); border: 1px solid var(--borde);
@@ -111,17 +113,22 @@ img { max-width: 100%; }
   flex-direction: column;
   gap: 2px;
 }
+
 .user-dropdown.abierto {
   display: flex;
 }
+
 .user-dropdown__name {
   font-size: 12px; font-weight: 600; color: var(--gris-texto);
   padding: 4px 8px; border-bottom: 1px solid var(--borde); margin-bottom: 4px;
 }
+
 .user-dropdown__link {
   font-size: 13px; color: var(--gris-texto);
   padding: 5px 8px; border-radius: var(--radio-sm);
+  display: block;
 }
+
 .user-dropdown__link:hover { background: var(--gris-fondo); }
 .user-dropdown__link--danger { color: var(--rojo) !important; }
 

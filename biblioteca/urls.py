@@ -57,6 +57,8 @@ urlpatterns = [
     path('solicitudes/<int:pk>/aprobar/',       views.solicitud_aprobar, name='solicitud_aprobar'),
     path('solicitudes/<int:pk>/rechazar/',      views.solicitud_rechazar,name='solicitud_rechazar'),
     path('libros/<int:libro_pk>/solicitar/',    views.solicitud_crear,   name='solicitud_crear'),
+    
+    # Solicitudes de rol
     path('solicitudes-rol/',                    views.solicitudes_rol_list, name='solicitudes_rol'),
     path('solicitudes-rol/<int:pk>/aprobar/',   views.aprobar_rol,     name='aprobar_rol'),
     path('solicitudes-rol/<int:pk>/rechazar/',  views.rechazar_rol,   name='rechazar_rol'),
