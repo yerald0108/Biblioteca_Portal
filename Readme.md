@@ -193,15 +193,7 @@ Sabrás que el entorno está activo porque verás `(venv)` al inicio de tu líne
 
 ### Paso 3 — Instalar las dependencias
 
-Con el entorno virtual activo, instala todas las librerías necesarias:
-
-```bash
-pip install django
-pip install pillow
-pip install python-dotenv
-```
-
-O si el proyecto tiene un archivo `requirements.txt`:
+Con el entorno virtual activo, instala todas las librerías necesarias con el archivo `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
@@ -222,18 +214,10 @@ EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
 > **Importante sobre la contraseña de Gmail:** Gmail no acepta tu contraseña normal. Debes generar una "Contraseña de aplicación":
 > 1. Ve a tu cuenta de Google → Seguridad
 > 2. Activa la verificación en dos pasos
-> 3. Busca "Contraseñas de aplicación" y genera una para "Correo"
-> 4. Usa esa contraseña de 16 caracteres en el `.env`
+> 3. luego abre una pestaña nueva en el navegador y pega esta enlace `myaccount.google.com/apppasswords`, te va a pedir tu usuario y contraseña de cuenta gmail.
+> 4. Cuando entres con tus credenciales vas a estar en la parte de "Contraseñas de aplicaciones", te va a salir un campo donde tienes que poner el nombre de la app, pon ahi por ejemplo "Portal Biblioteca" y luego le das al botón "Crear", luego te va a salir una contraseña como esta por ejemplo: "khrd agbj ygft wzvp", es contraseñas la copias y la pegas en la variable que esta en el archivo .env "EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion".
 
-Si no quieres configurar el correo ahora y solo quieres probar el sistema, edita `config/settings.py` y cambia temporalmente:
-
-```python
-# Cambia esta línea:
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-# Por esta (imprime los correos en la terminal en vez de enviarlos):
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-```
+**Este paso es importante para que la parte de notificaciones por correo te funcione correctamente**
 
 ---
 
