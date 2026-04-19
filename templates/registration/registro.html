@@ -11,7 +11,8 @@
                   justify-content:center; margin:0 auto 1rem;
                   font-family:var(--fuente-titulo); font-size:24px;
                   font-weight:700; color:var(--azul-fondo);">B</div>
-      <h1 style="font-family:var(--fuente-titulo); font-size:22px; color:var(--azul-oscuro);">
+      <h1 style="font-family:var(--fuente-titulo); font-size:22px;
+                 color:var(--azul-oscuro);">
         Crear cuenta
       </h1>
       <p style="font-size:13px; color:var(--gris-medio); margin-top:4px;">
@@ -22,14 +23,16 @@
     <!-- Aviso de aprobación -->
     <div style="background:var(--azul-fondo); border-left:3px solid var(--azul-claro);
                 border-radius:var(--radio-sm); padding:0.75rem 1rem;
-                margin-bottom:1.25rem; font-size:13px;">
-      <div style="font-weight:600; color:var(--azul); margin-bottom:4px;">
+                margin-bottom:1.25rem;">
+      <div style="font-weight:600; color:var(--azul); font-size:13px;
+                  margin-bottom:4px;">
         ¿Cómo funciona el registro?
       </div>
       <div style="color:var(--gris-medio); font-size:12px; line-height:1.6;">
         Elige el rol que te corresponde. Quedarás como
-        <strong>visitante</strong> hasta que el bibliotecario apruebe tu solicitud.
-        Una vez aprobado podrás solicitar préstamos y usar todas las funciones de tu rol.
+        <strong>visitante</strong> hasta que el bibliotecario apruebe tu
+        solicitud. Una vez aprobado podrás solicitar préstamos y usar todas
+        las funciones de tu rol.
       </div>
     </div>
 
@@ -70,50 +73,51 @@
         {% endif %}
       </div>
 
-      <!-- Selector de rol -->
+      <!-- Selector de rol visual -->
       <div class="form-group">
         <label>Soy... *</label>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"
+             id="rol-selector">
           <label style="display:flex; align-items:center; gap:10px;
-                        padding:12px; border:1px solid var(--borde);
+                        padding:12px; border:2px solid var(--borde);
                         border-radius:var(--radio-md); cursor:pointer;
-                        transition:border-color 0.15s;"
+                        transition:border-color 0.15s, background 0.15s;"
                  id="label-estudiante">
             <input type="radio" name="rol_solicitado" value="estudiante"
-                   id="rol-estudiante" style="width:auto;"
+                   id="rol-estudiante"
+                   style="width:auto; margin:0;"
                    onchange="actualizarRol()"
                    {% if form.rol_solicitado.value == 'estudiante' %}checked{% endif %}>
             <div>
-              <div style="font-size:14px; font-weight:600; color:var(--gris-texto);">
-                Estudiante
-              </div>
+              <div style="font-size:14px; font-weight:600;
+                          color:var(--gris-texto);">Estudiante</div>
               <div style="font-size:11px; color:var(--gris-medio);">
-                Acceso a préstamos y tesis
+                Préstamos y consulta de tesis
               </div>
             </div>
           </label>
           <label style="display:flex; align-items:center; gap:10px;
-                        padding:12px; border:1px solid var(--borde);
+                        padding:12px; border:2px solid var(--borde);
                         border-radius:var(--radio-md); cursor:pointer;
-                        transition:border-color 0.15s;"
+                        transition:border-color 0.15s, background 0.15s;"
                  id="label-profesor">
             <input type="radio" name="rol_solicitado" value="profesor"
-                   id="rol-profesor" style="width:auto;"
+                   id="rol-profesor"
+                   style="width:auto; margin:0;"
                    onchange="actualizarRol()"
                    {% if form.rol_solicitado.value == 'profesor' %}checked{% endif %}>
             <div>
-              <div style="font-size:14px; font-weight:600; color:var(--gris-texto);">
-                Profesor
-              </div>
+              <div style="font-size:14px; font-weight:600;
+                          color:var(--gris-texto);">Profesor</div>
               <div style="font-size:11px; color:var(--gris-medio);">
-                Acceso a préstamos y subir tesis
+                Préstamos y subir tesis
               </div>
             </div>
           </label>
         </div>
         {% if form.rol_solicitado.errors %}
           <div class="error-text" style="margin-top:4px;">
-            {{ form.rol_solicitado.errors.0 }}
+            Debes seleccionar un rol.
           </div>
         {% endif %}
       </div>
@@ -154,7 +158,9 @@
     <div style="margin-top:1rem; text-align:center; font-size:13px;
                 color:var(--gris-medio);">
       ¿Ya tienes cuenta?
-      <a href="{% url 'login' %}" style="color:var(--azul-claro);">Inicia sesión</a>
+      <a href="{% url 'login' %}" style="color:var(--azul-claro);">
+        Inicia sesión
+      </a>
     </div>
 
   </div>
@@ -162,17 +168,31 @@
 
 <script>
 function actualizarRol() {
-  const estudiante = document.getElementById('rol-estudiante');
-  const labelEst   = document.getElementById('label-estudiante');
-  const labelProf  = document.getElementById('label-profesor');
-  const azul       = '#378ADD';
-  const borde      = 'rgba(44,44,42,0.12)';
+  const estudianteChecked = document.getElementById('rol-estudiante').checked;
+  const labelEst  = document.getElementById('label-estudiante');
+  const labelProf = document.getElementById('label-profesor');
+  const azul  = 'var(--azul-claro)';
+  const borde = 'rgba(44,44,42,0.12)';
+  const fondoSel = 'var(--azul-fondo)';
 
-  labelEst.style.borderColor  = estudiante.checked ? azul : borde;
-  labelProf.style.borderColor = estudiante.checked ? borde : azul;
+  if (estudianteChecked) {
+    labelEst.style.borderColor  = azul;
+    labelEst.style.background   = fondoSel;
+    labelProf.style.borderColor = borde;
+    labelProf.style.background  = '';
+  } else {
+    labelProf.style.borderColor = azul;
+    labelProf.style.background  = fondoSel;
+    labelEst.style.borderColor  = borde;
+    labelEst.style.background   = '';
+  }
 }
-// Inicializar estado visual
-actualizarRol();
+// Inicializar si ya hay selección (por errores de validación)
+document.addEventListener('DOMContentLoaded', function() {
+  const est  = document.getElementById('rol-estudiante');
+  const prof = document.getElementById('rol-profesor');
+  if (est.checked || prof.checked) actualizarRol();
+});
 </script>
 
 {% endblock %}

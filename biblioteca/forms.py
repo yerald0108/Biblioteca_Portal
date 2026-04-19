@@ -198,20 +198,22 @@ class RegistroUsuarioForm(UserCreationForm):
         ('profesor',   'Profesor'),
     ]
 
-    first_name       = forms.CharField(max_length=150, required=True, label='Nombre')
-    last_name        = forms.CharField(max_length=150, required=True, label='Apellidos')
-    email            = forms.EmailField(required=True, label='Correo electrónico')
+    first_name       = forms.CharField(max_length=150, required=True,
+                                        label='Nombre')
+    last_name        = forms.CharField(max_length=150, required=True,
+                                        label='Apellidos')
+    email            = forms.EmailField(required=True,
+                                         label='Correo electrónico')
     rol_solicitado   = forms.ChoiceField(
         choices=ROL_OPCIONES,
         required=True,
         label='Soy...',
-        help_text='El bibliotecario confirmará tu rol antes de que puedas operar.'
     )
     motivo_solicitud = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={'rows': 3}),
-        label='Motivo o información adicional',
-        help_text='Opcional. Por ejemplo: tu número de matrícula, departamento, etc.'
+        label='Información adicional',
+        help_text='Opcional. Matrícula, departamento u otra información relevante.'
     )
 
     class Meta:
@@ -222,9 +224,9 @@ class RegistroUsuarioForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
-            if not isinstance(field.widget, forms.CheckboxInput):
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
                 field.widget.attrs['class'] = 'form-control'
-            if field.required:
+            if field.required and name not in ['rol_solicitado']:
                 field.widget.attrs['required'] = 'required'
         self.fields['username'].help_text = 'Solo letras, números y @/./+/-/_'
         self.fields['password1'].help_text = 'Mínimo 8 caracteres.'

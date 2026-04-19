@@ -46,22 +46,23 @@ urlpatterns = [
     path('mi-perfil/',                        views.mi_perfil,           name='mi_perfil'),
     path('usuarios/',                         views.usuario_list,        name='usuario_list'),
     path('usuarios/<int:pk>/editar/',         views.usuario_editar,      name='usuario_editar'),
-    path('mi-perfil/carnet/', views.carnet_biblioteca, name='carnet_biblioteca'),
+    path('mi-perfil/carnet/',                 views.carnet_biblioteca,   name='carnet_biblioteca'),
     
-    path('notificaciones/', views.notificaciones_list, name='notificaciones'),
-    path('buscar/', views.busqueda_global, name='busqueda_global'),
+    # Notificaciones y búsqueda
+    path('notificaciones/',                   views.notificaciones_list, name='notificaciones'),
+    path('buscar/',                           views.busqueda_global,     name='busqueda_global'),
     
     # Solicitudes de préstamo
-    path('solicitudes/',                        views.solicitud_list,    name='solicitud_list'),
-    path('solicitudes/mis/',                    views.mis_solicitudes,   name='mis_solicitudes'),
-    path('solicitudes/<int:pk>/aprobar/',       views.solicitud_aprobar, name='solicitud_aprobar'),
-    path('solicitudes/<int:pk>/rechazar/',      views.solicitud_rechazar,name='solicitud_rechazar'),
-    path('libros/<int:libro_pk>/solicitar/',    views.solicitud_crear,   name='solicitud_crear'),
+    path('solicitudes/',                      views.solicitud_list,      name='solicitud_list'),
+    path('solicitudes/mis/',                  views.mis_solicitudes,     name='mis_solicitudes'),
+    path('solicitudes/<int:pk>/aprobar/',     views.solicitud_aprobar,   name='solicitud_aprobar'),
+    path('solicitudes/<int:pk>/rechazar/',    views.solicitud_rechazar,  name='solicitud_rechazar'),
+    path('libros/<int:libro_pk>/solicitar/',  views.solicitud_crear,     name='solicitud_crear'),
     
     # Solicitudes de rol
-    path('solicitudes-rol/',                    views.solicitudes_rol_list, name='solicitudes_rol'),
-    path('solicitudes-rol/<int:pk>/aprobar/',   views.aprobar_rol,     name='aprobar_rol'),
-    path('solicitudes-rol/<int:pk>/rechazar/',  views.rechazar_rol,   name='rechazar_rol'),
+    path('solicitudes-rol/',                  views.solicitudes_rol_list, name='solicitudes_rol'),
+    path('solicitudes-rol/<int:pk>/aprobar/', views.aprobar_rol,          name='aprobar_rol'),
+    path('solicitudes-rol/<int:pk>/rechazar/',views.rechazar_rol,         name='rechazar_rol'),
     
     # Renovaciones
     path('renovaciones/',                         views.renovacion_list,    name='renovacion_list'),

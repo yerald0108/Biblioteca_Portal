@@ -70,7 +70,10 @@ TIME_ZONE = 'America/Havana'
 USE_I18N = True
 USE_TZ = True
 
-LOGOUT_REDIRECT_URL = '/auth/login/'
+# ─── AUTENTICACIÓN ────────────────────────────────────────────
+LOGIN_URL = '/auth/login/'  # URL a la que redirige @login_required
+LOGIN_REDIRECT_URL = '/'    # Después de hacer login, va al home (opcional pero recomendado)
+LOGOUT_REDIRECT_URL = '/auth/login/'  # Ya lo tienes, está bien
 
 # ── CORREO ──
 # Para desarrollo: cambia a console.EmailBackend para ver correos en terminal

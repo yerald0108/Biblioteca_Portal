@@ -7,19 +7,15 @@ from django.db.models import Q, Count
 from django.utils import timezone
 from django.http import FileResponse, Http404
 import os
+import json
+from django.db.models import Count
+from django.utils import timezone
 
 from config import settings
 
-from .correo import (
-    enviar_notificacion_vencimiento,
-    enviar_recordatorio,
-    enviar_confirmacion_prestamo,
-    enviar_rechazo_solicitud,
-    procesar_notificaciones_pendientes,
-)
 from .decoradores import solo_bibliotecario, rol_requerido, get_rol
 from biblioteca.forms import RegistroUsuarioForm
-from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, Recurso, SolicitudPrestamo, RenovacionPrestamo, NotificacionCorreo
+from .models import Libro, Ejemplar, Categoria, Prestamo, Tesis, Profesor, Recurso, PerfilUsuario, SolicitudPrestamo, RenovacionPrestamo, NotificacionCorreo
 from .forms import LibroForm, EjemplarForm, BusquedaForm, PrestamoForm, TesisForm, ProfesorForm, RecursoForm, PerfilForm, GestionUsuarioForm, SolicitudPrestamoForm, AprobarSolicitudForm, RechazarSolicitudForm, AprobarRenovacionForm, RechazarRenovacionForm, RenovacionForm, CategoriaForm
 from .correo import (
     enviar_notificacion_vencimiento,
@@ -569,10 +565,6 @@ def panel_bibliotecario(request):
     # Actualizar estados vencidos cada vez que se carga el panel
     Prestamo.actualizar_vencidos()
 
-    import json
-    from django.db.models import Count
-    from django.utils import timezone
-
     hoy = timezone.now().date()
 
     stats = {
@@ -586,10 +578,7 @@ def panel_bibliotecario(request):
     
     solicitudes_pendientes = SolicitudPrestamo.objects.filter(estado='pendiente').count()
     renovaciones_pendientes = RenovacionPrestamo.objects.filter(estado='pendiente').count()
-    roles_pendientes = PerfilUsuario.objects.filter(
-        rol_solicitado__isnull=False,
-        rol_aprobado=False
-    ).count()
+    roles_pendientes = PerfilUsuario.objects.filter(rol_solicitado__isnull=False,rol_aprobado=False).count()
 
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
@@ -668,13 +657,13 @@ def panel_bibliotecario(request):
         'datos_categorias_json':    datos_categorias_json,
         'datos_inventario_json':    datos_inventario_json,
         'solicitudes_pendientes':   solicitudes_pendientes,
-        'renovaciones_pendientes': renovaciones_pendientes,
-        'roles_pendientes': roles_pendientes,
+        'renovaciones_pendientes':  renovaciones_pendientes,
+        'roles_pendientes':         roles_pendientes,
         
-        'ultimas_notificaciones': ultimas_notificaciones,
-        'total_notificaciones':   total_notificaciones,
-        'notif_exitosas':         notif_exitosas,
-        'notif_fallidas':         notif_fallidas,
+        'ultimas_notificaciones':   ultimas_notificaciones,
+        'total_notificaciones':     total_notificaciones,
+        'notif_exitosas':           notif_exitosas,
+        'notif_fallidas':           notif_fallidas,
     })
 
 
@@ -1174,10 +1163,10 @@ def busqueda_global(request):
         'recursos':   recursos,
         'total':      total,
     })
-    
+
+
 @solo_bibliotecario
 def solicitudes_rol_list(request):
-    """Lista de usuarios con solicitud de rol pendiente."""
     pendientes = PerfilUsuario.objects.filter(
         rol_solicitado__isnull=False,
         rol_aprobado=False
@@ -1198,7 +1187,7 @@ def solicitudes_rol_list(request):
 def aprobar_rol(request, pk):
     perfil = get_object_or_404(PerfilUsuario, pk=pk)
     if request.method == 'POST':
-        rol_nuevo = request.POST.get('rol', perfil.rol_solicitado)
+        rol_nuevo           = request.POST.get('rol', perfil.rol_solicitado)
         perfil.rol          = rol_nuevo
         perfil.rol_aprobado = True
         perfil.save()
@@ -1214,14 +1203,14 @@ def aprobar_rol(request, pk):
 def rechazar_rol(request, pk):
     perfil = get_object_or_404(PerfilUsuario, pk=pk)
     if request.method == 'POST':
-        perfil.rol_solicitado    = None
-        perfil.motivo_solicitud  = ''
-        perfil.rol               = 'visitante'
-        perfil.rol_aprobado      = False
+        perfil.rol_solicitado   = None
+        perfil.motivo_solicitud = ''
+        perfil.rol_aprobado     = False
+        perfil.rol              = 'visitante'
         perfil.save()
         messages.success(
             request,
-            f'Solicitud de rol rechazada. '
+            f'Solicitud rechazada. '
             f'{perfil.usuario.get_full_name() or perfil.usuario.username} '
             f'queda como visitante.'
         )

@@ -7,19 +7,20 @@
   <div>
     <h1 class="page-header__title">Solicitudes de rol</h1>
     <p class="page-header__sub">
-      {{ pendientes.count }} solicitud{{ pendientes.count|pluralize }} pendiente{{ pendientes.count|pluralize }}
+      {{ pendientes.count }} solicitud{{ pendientes.count|pluralize }}
+      pendiente{{ pendientes.count|pluralize }}
     </p>
   </div>
   <a href="{% url 'biblioteca:panel' %}" class="btn btn--secondary">← Panel</a>
 </div>
 
-<!-- PENDIENTES -->
 {% if pendientes %}
 <div class="card" style="margin-bottom:1.5rem;">
   <div class="card__header">
     <div class="card__title">
       Pendientes de aprobación
-      <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+      <span class="badge"
+            style="background:var(--ambar-fondo); color:var(--ambar);">
         {{ pendientes.count }}
       </span>
     </div>
@@ -53,11 +54,14 @@
           </td>
           <td>
             {% if p.rol_solicitado == 'estudiante' %}
-              <span class="badge" style="background:var(--ambar-fondo); color:var(--ambar);">
+              <span class="badge"
+                    style="background:var(--ambar-fondo); color:var(--ambar);">
                 Estudiante
               </span>
             {% elif p.rol_solicitado == 'profesor' %}
               <span class="badge badge--disponible">Profesor</span>
+            {% else %}
+              <span class="badge badge--info">{{ p.get_rol_solicitado_display }}</span>
             {% endif %}
           </td>
           <td style="font-size:12px; color:var(--gris-medio); max-width:200px;">
@@ -67,18 +71,18 @@
             {{ p.usuario.date_joined|date:"d/m/Y" }}
           </td>
           <td>
-            <!-- Selector de rol para aprobar -->
-            <form method="post" action="{% url 'biblioteca:aprobar_rol' p.pk %}"
+            <form method="post"
+                  action="{% url 'biblioteca:aprobar_rol' p.pk %}"
                   style="display:flex; gap:6px; align-items:center;">
               {% csrf_token %}
               <select name="rol" class="form-control"
                       style="padding:4px 8px; font-size:12px; width:auto;">
                 <option value="estudiante"
-                        {% if p.rol_solicitado == 'estudiante' %}selected{% endif %}>
+                  {% if p.rol_solicitado == 'estudiante' %}selected{% endif %}>
                   Estudiante
                 </option>
                 <option value="profesor"
-                        {% if p.rol_solicitado == 'profesor' %}selected{% endif %}>
+                  {% if p.rol_solicitado == 'profesor' %}selected{% endif %}>
                   Profesor
                 </option>
                 <option value="bibliotecario">Bibliotecario</option>
@@ -104,10 +108,12 @@
     </table>
   </div>
 </div>
+
 {% else %}
-<div class="card" style="text-align:center; padding:2rem; margin-bottom:1.5rem;">
-  <div style="font-size:32px; margin-bottom:0.75rem;">✅</div>
-  <div style="font-size:15px; font-weight:600; color:var(--gris-texto); margin-bottom:4px;">
+<div class="card" style="text-align:center; padding:2.5rem; margin-bottom:1.5rem;">
+  <div style="font-size:36px; margin-bottom:0.75rem;">✅</div>
+  <div style="font-size:15px; font-weight:600; color:var(--gris-texto);
+              margin-bottom:4px;">
     No hay solicitudes pendientes
   </div>
   <div style="font-size:13px; color:var(--gris-medio);">
@@ -116,7 +122,6 @@
 </div>
 {% endif %}
 
-<!-- ÚLTIMAS APROBADAS -->
 {% if aprobados %}
 <div class="card">
   <div class="card__header">
@@ -130,6 +135,7 @@
       <thead>
         <tr>
           <th>Usuario</th>
+          <th>Nombre</th>
           <th>Correo</th>
           <th>Rol aprobado</th>
           <th>Registro</th>
@@ -138,8 +144,11 @@
       <tbody>
         {% for p in aprobados %}
         <tr>
+          <td style="font-size:13px; color:var(--gris-medio);">
+            @{{ p.usuario.username }}
+          </td>
           <td style="font-weight:600; font-size:13px;">
-            {{ p.usuario.get_full_name|default:p.usuario.username }}
+            {{ p.usuario.get_full_name|default:"—" }}
           </td>
           <td style="font-size:13px; color:var(--gris-medio);">
             {{ p.usuario.email|default:"—" }}

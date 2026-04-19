@@ -47,18 +47,21 @@ def registro(request):
     if form.is_valid():
         usuario = form.save()
 
-        # Guardar el rol solicitado en el perfil
+        # Guardar solicitud de rol en el perfil
         perfil = usuario.perfil
         perfil.rol_solicitado   = form.cleaned_data['rol_solicitado']
         perfil.motivo_solicitud = form.cleaned_data.get('motivo_solicitud', '')
         perfil.save()
 
         login(request, usuario)
+
+        rol_display = dict(form.ROL_OPCIONES).get(
+            form.cleaned_data['rol_solicitado'], 'Desconocido'
+        )
         messages.success(
             request,
             f'Bienvenido/a {usuario.get_full_name() or usuario.username}. '
-            f'Tu solicitud de rol "{perfil.get_rol_solicitado_display()}" '
-            f'está pendiente de aprobación por el bibliotecario. '
+            f'Tu solicitud de rol "{rol_display}" está pendiente de aprobación. '
             f'Mientras tanto puedes navegar el portal como visitante.'
         )
         return redirect('home')
