@@ -24,9 +24,13 @@
       </div>
       {% if es_bibliotecario or es_profesor %}
         <div style="display:flex; gap:8px; flex-shrink:0;">
-          <a href="{% url 'biblioteca:tesis_editar' tesis.pk %}" class="btn btn--secondary btn--sm">Editar</a>
-          <a href="{% url 'biblioteca:tesis_eliminar' tesis.pk %}" class="btn btn--danger btn--sm">Eliminar</a>
-        </div>
+          <a href="{% url 'biblioteca:tesis_editar' tesis.pk %}"
+            class="btn btn--secondary btn--sm">Editar</a>
+          {% if es_bibliotecario %}
+            <a href="{% url 'biblioteca:tesis_eliminar' tesis.pk %}"
+              class="btn btn--danger btn--sm">Eliminar</a>
+          {% endif %}
+          </div>
       {% endif %}
     </div>
 
