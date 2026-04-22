@@ -137,18 +137,32 @@ def libro_editar(request, pk):
 
 @solo_bibliotecario
 def libro_eliminar(request, pk):
-    if not request.user.is_staff:
-        messages.error(request, 'No tienes permiso para eliminar libros.')
-        return redirect('biblioteca:libro_list')
-
     libro = get_object_or_404(Libro, pk=pk)
+
+    # Verificar si tiene préstamos asociados
+    tiene_prestamos = Prestamo.objects.filter(
+        ejemplar__libro=libro
+    ).exists()
+
     if request.method == 'POST':
+        if tiene_prestamos:
+            messages.error(
+                request,
+                f'No se puede eliminar "{libro.titulo}" porque tiene préstamos '
+                f'registrados en el historial. Primero devuelve todos los '
+                f'ejemplares prestados.'
+            )
+            return redirect('biblioteca:libro_detail', pk=libro.pk)
+
         titulo = libro.titulo
         libro.delete()
         messages.success(request, f'Libro "{titulo}" eliminado.')
         return redirect('biblioteca:libro_list')
 
-    return render(request, 'biblioteca/libro_confirmar_eliminar.html', {'libro': libro})
+    return render(request, 'biblioteca/libro_confirmar_eliminar.html', {
+        'libro':           libro,
+        'tiene_prestamos': tiene_prestamos,
+    })
 
 @solo_bibliotecario
 def ejemplar_agregar(request, libro_pk):
