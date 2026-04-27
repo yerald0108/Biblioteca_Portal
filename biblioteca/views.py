@@ -305,13 +305,18 @@ def tesis_list(request):
 @login_required
 def tesis_detail(request, pk):
     tesis = get_object_or_404(Tesis, pk=pk)
+    # Incrementar contador de vistas
+    Tesis.objects.filter(pk=pk).update(vistas=tesis.vistas + 1)
+    tesis.vistas += 1  # actualizar el objeto local también
     return render(request, 'biblioteca/tesis_detail.html', {'tesis': tesis})
 
 @rol_requerido('bibliotecario', 'profesor')
 def tesis_crear(request):
     form = TesisForm(request.POST or None, request.FILES or None)
     if form.is_valid():
-        tesis = form.save()
+        tesis            = form.save(commit=False)
+        tesis.creado_por = request.user
+        tesis.save()
         messages.success(request, f'Tesis "{tesis.titulo}" registrada correctamente.')
         return redirect('biblioteca:tesis_detail', pk=tesis.pk)
     return render(request, 'biblioteca/tesis_form.html', {
@@ -338,10 +343,6 @@ def tesis_editar(request, pk):
 
 @solo_bibliotecario
 def tesis_eliminar(request, pk):
-    if not request.user.is_staff:
-        messages.error(request, 'No tienes permiso para eliminar tesis.')
-        return redirect('biblioteca:tesis_list')
-
     tesis = get_object_or_404(Tesis, pk=pk)
     if request.method == 'POST':
         titulo = tesis.titulo
@@ -593,6 +594,7 @@ def panel_bibliotecario(request):
     solicitudes_pendientes = SolicitudPrestamo.objects.filter(estado='pendiente').count()
     renovaciones_pendientes = RenovacionPrestamo.objects.filter(estado='pendiente').count()
     roles_pendientes = PerfilUsuario.objects.filter(rol_solicitado__isnull=False,rol_aprobado=False).count()
+    tesis_populares = Tesis.objects.order_by('-vistas')[:5]
 
     prestamos_activos  = Prestamo.objects.filter(estado='activo').count()
     prestamos_vencidos = Prestamo.objects.filter(estado='vencido').count()
@@ -673,6 +675,7 @@ def panel_bibliotecario(request):
         'solicitudes_pendientes':   solicitudes_pendientes,
         'renovaciones_pendientes':  renovaciones_pendientes,
         'roles_pendientes':         roles_pendientes,
+        'tesis_populares': tesis_populares,
         
         'ultimas_notificaciones':   ultimas_notificaciones,
         'total_notificaciones':     total_notificaciones,
@@ -1229,3 +1232,88 @@ def rechazar_rol(request, pk):
             f'queda como visitante.'
         )
     return redirect('biblioteca:solicitudes_rol')
+
+@login_required
+def mi_actividad(request):
+    from django.utils import timezone
+
+    # Recopilar todos los eventos del usuario
+    prestamos = Prestamo.objects.filter(
+        usuario=request.user
+    ).select_related('ejemplar__libro').order_by('-fecha_prestamo')
+
+    solicitudes = SolicitudPrestamo.objects.filter(
+        usuario=request.user
+    ).select_related('libro').order_by('-fecha_solicitud')
+
+    renovaciones = RenovacionPrestamo.objects.filter(
+        usuario=request.user
+    ).select_related('prestamo__ejemplar__libro').order_by('-fecha_solicitud')
+
+    # Construir timeline unificado
+    eventos = []
+
+    for p in prestamos:
+        # Evento: préstamo registrado
+        eventos.append({
+            'tipo':    'prestamo',
+            'fecha':   p.fecha_prestamo,
+            'titulo':  p.ejemplar.libro.titulo,
+            'subtipo': p.estado,
+            'objeto':  p,
+            'icono':   '📚',
+            'color':   'azul',
+        })
+        # Evento: devolución si aplica
+        if p.estado == 'devuelto' and p.fecha_devuelto:
+            eventos.append({
+                'tipo':    'devolucion',
+                'fecha':   p.fecha_devuelto,
+                'titulo':  p.ejemplar.libro.titulo,
+                'subtipo': 'devuelto',
+                'objeto':  p,
+                'icono':   '✅',
+                'color':   'verde',
+            })
+
+    for s in solicitudes:
+        eventos.append({
+            'tipo':    'solicitud',
+            'fecha':   s.fecha_solicitud,
+            'titulo':  s.libro.titulo,
+            'subtipo': s.estado,
+            'objeto':  s,
+            'icono':   '📋',
+            'color':   'ambar' if s.estado == 'pendiente' else
+                       'verde' if s.estado == 'aprobada' else 'rojo',
+        })
+
+    for r in renovaciones:
+        eventos.append({
+            'tipo':    'renovacion',
+            'fecha':   r.fecha_solicitud,
+            'titulo':  r.prestamo.ejemplar.libro.titulo,
+            'subtipo': r.estado,
+            'objeto':  r,
+            'icono':   '🔄',
+            'color':   'ambar' if r.estado == 'pendiente' else
+                       'verde' if r.estado == 'aprobada' else 'rojo',
+        })
+
+    # Ordenar por fecha descendente
+    eventos.sort(key=lambda e: e['fecha'], reverse=True)
+
+    # Estadísticas rápidas
+    stats = {
+        'prestamos_activos':    prestamos.filter(estado='activo').count(),
+        'prestamos_vencidos':   prestamos.filter(estado='vencido').count(),
+        'prestamos_devueltos':  prestamos.filter(estado='devuelto').count(),
+        'solicitudes_pendientes': solicitudes.filter(estado='pendiente').count(),
+        'solicitudes_aprobadas':  solicitudes.filter(estado='aprobada').count(),
+        'renovaciones_pendientes': renovaciones.filter(estado='pendiente').count(),
+    }
+
+    return render(request, 'biblioteca/mi_actividad.html', {
+        'eventos': eventos,
+        'stats':   stats,
+    })

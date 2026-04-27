@@ -1,6 +1,6 @@
 # Portal de Información Institucional — Biblioteca
 
-Sistema web completo para la gestión de una biblioteca institucional, desarrollado con Django. Incluye catálogo de libros, préstamos, repositorio de tesis, cuerpo docente y recursos digitales.
+Sistema web completo para la gestión de una biblioteca institucional, desarrollado con Django. Incluye catálogo de libros, préstamos, repositorio de tesis, cuerpo docente, recursos digitales y un sistema de roles con aprobación por el bibliotecario.
 
 ---
 
@@ -27,11 +27,14 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 - El **catálogo digital** de todos los libros físicos con sus ejemplares
 - El **control de préstamos** con seguimiento de estados y fechas de vencimiento
 - Las **notificaciones automáticas por correo** cuando un préstamo vence o está próximo a vencer
-- Un **repositorio de tesis** consultable con soporte para archivos PDF
+- Un **repositorio de tesis** consultable con soporte para archivos PDF y contador de visualizaciones
 - Un **directorio del cuerpo docente** con biografías y categorías
 - Una sección de **recursos y novedades** (tutoriales, manuales, videos)
 - Un sistema de **solicitudes de préstamo** donde los usuarios piden libros y el bibliotecario aprueba o rechaza
-- Un **panel de control** para el bibliotecario con gráficas y estadísticas en tiempo real
+- Un sistema de **solicitudes de rol** donde el usuario elige su rol al registrarse y el bibliotecario lo aprueba
+- Un **panel de control** para el bibliotecario con gráficas, estadísticas y tesis más consultadas
+- Un **historial de actividad** personal para cada usuario con timeline de préstamos, solicitudes y renovaciones
+- **Alertas visuales en el home** cuando el usuario tiene préstamos vencidos o próximos a vencer
 
 ---
 
@@ -42,7 +45,7 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 | Backend | Django 6.x (Python) |
 | Base de datos | SQLite (desarrollo) |
 | Frontend | HTML, CSS personalizado, JavaScript |
-| Gráficas | Chart.js |
+| Gráficas | Chart.js 4.4 |
 | Correo electrónico | SMTP (Gmail u otro proveedor) |
 | Tipografía | Google Fonts (Playfair Display + Source Sans 3) |
 
@@ -57,6 +60,8 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 - Búsqueda y filtrado por texto, categoría y estado de disponibilidad
 - Paginación de resultados
 - Alta, edición y baja de libros y ejemplares (solo bibliotecario)
+- Protección contra eliminación si el libro tiene préstamos registrados — muestra mensaje claro en lugar de error del sistema
+- Historial de préstamos por libro visible para el bibliotecario
 
 ### 2. Préstamos
 - Registro de préstamos asociando ejemplar, usuario y fecha límite
@@ -65,12 +70,15 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 - Registro de devoluciones con liberación automática del ejemplar
 - Filtros por estado (activos / vencidos / devueltos)
 - Vista diferenciada: el bibliotecario ve todos los préstamos; el estudiante/profesor solo los suyos
+- Límite configurable de préstamos activos simultáneos por usuario (por defecto: 3)
 
 ### 3. Notificaciones por correo
 - **Recordatorio**: se envía cuando faltan 2 días o menos para el vencimiento
 - **Aviso de vencimiento**: se envía cuando el préstamo ya está vencido
 - **Confirmación de aprobación**: se envía al usuario cuando su solicitud es aprobada
 - **Notificación de rechazo**: se envía al usuario cuando su solicitud es rechazada
+- **Confirmación de renovación**: se envía al usuario cuando su renovación es aprobada
+- **Rechazo de renovación**: se envía al usuario cuando su renovación es rechazada
 - Historial completo de todas las notificaciones enviadas con estado (exitoso/fallido)
 - El bibliotecario puede enviar notificaciones manualmente desde el panel o la lista de préstamos
 - Procesamiento masivo automático mediante el comando `enviar_notificaciones`
@@ -82,22 +90,30 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 - Flujo de rechazo: el bibliotecario escribe un motivo que llega al usuario por correo
 - Los usuarios pueden ver el historial de todas sus solicitudes
 
-### 5. Repositorio de Tesis
+### 5. Renovaciones de préstamo
+- El usuario solicita extensión de plazo indicando los días deseados (entre 1 y 30)
+- El bibliotecario aprueba con una nueva fecha o rechaza con un motivo
+- El usuario recibe correo de confirmación o rechazo automáticamente
+- No se puede renovar un préstamo que ya tiene una renovación pendiente
+
+### 6. Repositorio de Tesis
 - Registro de tesis con autor, tutor, año, tipo (licenciatura/maestría/doctorado) y área temática
+- Campo **Registrado por** que guarda qué usuario subió la tesis
 - Soporte para subir y visualizar archivos PDF directamente en el navegador
 - Búsqueda por título, autor y área
 - Filtrado por tipo de tesis
 - Control de disponibilidad (el bibliotecario puede marcar una tesis como no disponible)
-- Profesores y bibliotecarios pueden registrar nuevas tesis
+- **Contador de visualizaciones**: cada vez que alguien abre el detalle de una tesis se incrementa el contador
+- Profesores y bibliotecarios pueden registrar y editar tesis; solo el bibliotecario puede eliminarlas
 
-### 6. Cuerpo Docente
+### 7. Cuerpo Docente
 - Directorio de profesores con foto, biografía, especialidad y categoría docente
 - Categorías: Titular, Auxiliar, Asistente, Instructor
 - Ámbito: Nacional o Internacional (con país)
 - Búsqueda por nombre, apellidos y especialidad
 - Filtrado por categoría y ámbito
 
-### 7. Recursos y Novedades
+### 8. Recursos y Novedades
 - Publicación de contenidos de cuatro tipos: **Novedades literarias**, **Tutoriales**, **Manuales**, **Videos**
 - Soporte para archivos adjuntos descargables (PDF, DOC, etc.)
 - Soporte para videos de YouTube con embed automático
@@ -105,23 +121,45 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 - Marcado de recursos como destacados (aparecen en la página de inicio)
 - Solo el bibliotecario puede crear, editar y eliminar recursos
 
-### 8. Gestión de Usuarios
-- Registro propio de nuevos usuarios
+### 9. Gestión de Usuarios y Roles
+- Registro propio de nuevos usuarios con selección de rol solicitado (Estudiante o Profesor)
+- El usuario queda como **Visitante** hasta que el bibliotecario aprueba su solicitud de rol
+- El bibliotecario puede cambiar el rol aprobado desde la sección **Solicitudes de rol**
 - Perfiles de usuario con foto, carnet/matrícula y teléfono
-- El bibliotecario puede cambiar el rol de cualquier usuario desde el panel
-- Cada usuario puede editar sus propios datos desde "Mi perfil"
+- Carnet digital imprimible con préstamos activos
 
-### 9. Panel del Bibliotecario
+### 10. Historial de actividad personal
+- Timeline unificado con todos los eventos del usuario: préstamos, devoluciones, solicitudes y renovaciones
+- Estadísticas rápidas: préstamos activos, vencidos, devueltos, solicitudes y renovaciones pendientes
+- Accesible desde "Mi perfil" → "Ver mi actividad"
+
+### 11. Alertas visuales en el home
+- Si el usuario tiene préstamos **vencidos**, aparece un banner rojo con el nombre del libro y los días de retraso
+- Si el usuario tiene préstamos **próximos a vencer** (2 días o menos), aparece un banner amarillo
+- Si la solicitud de rol del usuario está **pendiente de aprobación**, aparece un banner informativo azul
+- Las alertas son descartables con un botón de cierre
+
+### 12. Panel del Bibliotecario
 - Estadísticas generales del sistema (libros, ejemplares, tesis, usuarios, recursos)
-- Contador de solicitudes pendientes con acceso rápido
+- Contadores de solicitudes de préstamo, renovaciones y roles pendientes con acceso directo
 - Gráfica de barras: préstamos registrados por mes (últimos 6 meses)
 - Gráfica de dona: libros por categoría
 - Gráfica de dona: estado del inventario (disponible/prestado/reservado/deteriorado)
 - Listado de préstamos por vencer en los próximos 2 días con botón de notificación directa
 - Listado de préstamos vencidos con días de retraso
+- **Tesis más consultadas**: tabla con el top 5 de tesis por número de visualizaciones
 - Historial de las últimas 8 notificaciones enviadas
 - Resumen de notificaciones (total, exitosas, fallidas)
-- Acciones rápidas: registrar libro, registrar préstamo, gestionar usuarios, ver correos
+- Acciones rápidas: registrar libro, registrar préstamo, gestionar usuarios, ver correos, categorías, solicitudes de rol
+
+### 13. Gestión de Categorías
+- CRUD completo de categorías de libros desde el frontend (sin ir al admin de Django)
+- Solo el bibliotecario puede crear, editar y eliminar categorías
+- No se puede eliminar una categoría que tenga libros asociados
+
+### 14. Búsqueda Global
+- Busca simultáneamente en libros, tesis, profesores y recursos desde una sola barra
+- Resultados agrupados por tipo con acceso directo a cada elemento
 
 ---
 
@@ -130,11 +168,23 @@ Este portal resuelve el problema del control manual de préstamos y la falta de 
 | Rol | Qué puede hacer |
 |---|---|
 | **Visitante** | Ver catálogo, tesis, profesores y recursos. No puede solicitar préstamos. |
-| **Estudiante** | Todo lo anterior + solicitar préstamos + ver sus solicitudes y préstamos |
+| **Estudiante** | Todo lo anterior + solicitar préstamos + ver sus solicitudes, préstamos y actividad |
 | **Profesor** | Todo lo anterior + registrar y editar tesis |
-| **Bibliotecario** | Acceso completo: gestión de libros, préstamos, usuarios, recursos, panel, notificaciones |
+| **Bibliotecario** | Acceso completo: gestión de libros, préstamos, usuarios, recursos, panel, notificaciones, categorías y roles |
 
-> Los usuarios nuevos que se registran solos reciben el rol **Visitante** por defecto. El bibliotecario debe cambiarles el rol manualmente desde la gestión de usuarios.
+> Al registrarse, el usuario elige si es Estudiante o Profesor y queda como **Visitante** hasta que el bibliotecario apruebe su solicitud desde el panel.
+
+---
+
+## Flujo de registro y aprobación de rol
+
+1. El usuario va a `/registro/` y completa el formulario eligiendo su rol (Estudiante o Profesor)
+2. Puede escribir información adicional como su número de matrícula o departamento
+3. El sistema crea la cuenta con rol **Visitante** y guarda la solicitud de rol
+4. El usuario puede navegar el portal pero no puede solicitar préstamos
+5. El bibliotecario recibe la solicitud en el panel → **Solicitudes de rol**
+6. El bibliotecario puede aprobar el rol solicitado, cambiarlo a otro, o rechazarlo
+7. Una vez aprobado, el usuario tiene acceso completo a las funciones de su rol
 
 ---
 
@@ -173,8 +223,6 @@ Descarga el archivo ZIP del proyecto, descomprímelo y entra a la carpeta desde 
 
 ### Paso 2 — Crear el entorno virtual
 
-Un entorno virtual aísla las dependencias del proyecto para que no interfieran con otros proyectos Python en tu PC.
-
 **En Windows (PowerShell):**
 ```powershell
 python -m venv venv
@@ -193,64 +241,62 @@ Sabrás que el entorno está activo porque verás `(venv)` al inicio de tu líne
 
 ### Paso 3 — Instalar las dependencias
 
-Con el entorno virtual activo, instala todas las librerías necesarias con el archivo `requirements.txt`:
-
 ```bash
 pip install -r requirements.txt
+```
+
+Si no tienes `requirements.txt`, instala las dependencias manualmente:
+
+```bash
+pip install django pillow python-dotenv
 ```
 
 ---
 
 ### Paso 4 — Crear el archivo de configuración `.env`
 
-En la raíz del proyecto (al mismo nivel que `manage.py`), crea un archivo llamado `.env` con el siguiente contenido:
+En la raíz del proyecto (al mismo nivel que `manage.py`), crea un archivo llamado `.env`:
 
 ```env
-# Correo saliente (necesario para las notificaciones)
 EMAIL_HOST_USER=tu_correo@gmail.com
 EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
 ```
 
-> **Importante sobre la contraseña de Gmail:** Gmail no acepta tu contraseña normal. Debes generar una "Contraseña de aplicación":
-> 1. Ve a tu cuenta de Google → Seguridad
-> 2. Activa la verificación en dos pasos
-> 3. luego abre una pestaña nueva en el navegador y pega esta enlace `myaccount.google.com/apppasswords`, te va a pedir tu usuario y contraseña de cuenta gmail.
-> 4. Cuando entres con tus credenciales vas a estar en la parte de "Contraseñas de aplicaciones", te va a salir un campo donde tienes que poner el nombre de la app, pon ahi por ejemplo "Portal Biblioteca" y luego le das al botón "Crear", luego te va a salir una contraseña como esta por ejemplo: "khrd agbj ygft wzvp", es contraseñas la copias y la pegas en la variable que esta en el archivo .env "EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion".
+> **Contraseña de aplicación de Gmail:** Gmail no acepta tu contraseña normal. Para generarla:
+> 1. Ve a tu cuenta de Google → Seguridad → activa la verificación en dos pasos
+> 2. Abre `myaccount.google.com/apppasswords`
+> 3. Pon un nombre como "Portal Biblioteca" y haz clic en **Crear**
+> 4. Copia la contraseña de 16 caracteres (ejemplo: `khrd agbj ygft wzvp`) y pégala en `.env`
 
-**Este paso es importante para que la parte de notificaciones por correo te funcione correctamente**
+Si no quieres configurar el correo ahora, edita `config/settings.py` y cambia temporalmente:
+
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+Los correos aparecerán en la terminal en lugar de enviarse.
 
 ---
 
 ### Paso 5 — Crear la base de datos
 
-Este comando crea todas las tablas necesarias en la base de datos SQLite:
-
 ```bash
 python manage.py migrate
 ```
 
-Verás una lista de migraciones aplicadas. Al terminar, se crea automáticamente el archivo `db.sqlite3` en la raíz del proyecto.
-
 ---
 
-### Paso 6 — Crear el superusuario (administrador)
+### Paso 6 — Crear el superusuario
 
 ```bash
 python manage.py createsuperuser
 ```
-
-El sistema te pedirá:
-- **Username:** el nombre de usuario que usarás para entrar (por ejemplo: `admin`)
-- **Email:** tu correo electrónico
-- **Password:** tu contraseña (no se muestra al escribir, es normal)
 
 Este usuario tendrá acceso completo al sistema y al panel de Django en `/admin/`.
 
 ---
 
 ### Paso 7 — Crear la carpeta de medios
-
-Django necesita una carpeta donde guardar las imágenes y archivos subidos:
 
 ```bash
 # En Windows:
@@ -262,27 +308,17 @@ mkdir media
 
 ---
 
-### Paso 8 — Iniciar el servidor de desarrollo
+### Paso 8 — Iniciar el servidor
 
 ```bash
 python manage.py runserver
 ```
 
-Verás algo así en la terminal:
-
-```
-Django version 6.x, using settings 'config.settings'
-Starting development server at http://127.0.0.1:8000/
-Quit the server with CONTROL-C.
-```
-
-Abre tu navegador y ve a **http://127.0.0.1:8000**
+Abre tu navegador en **http://127.0.0.1:8000**
 
 ---
 
 ## Poblar la base de datos con datos de prueba
-
-El proyecto incluye un comando que crea automáticamente libros, usuarios, préstamos, tesis, profesores y recursos de ejemplo para que puedas explorar el sistema sin tener que cargar datos manualmente:
 
 ```bash
 python manage.py poblar_datos
@@ -291,81 +327,60 @@ python manage.py poblar_datos
 Este comando crea:
 - 8 categorías de libros
 - 12 libros con entre 2 y 4 ejemplares cada uno
-- 6 usuarios con diferentes roles
+- 6 usuarios con diferentes roles (todos con `rol_aprobado = True`)
 - 6 préstamos (algunos activos, algunos vencidos)
 - 6 tesis en el repositorio
 - 6 profesores en el directorio docente
 - 6 recursos publicados (novedades, tutoriales, manuales, videos)
 
-> Si ejecutas el comando varias veces, no duplica los datos (usa `get_or_create` internamente).
+> Si ejecutas el comando varias veces no duplica los datos, usa `get_or_create` internamente.
 
 ---
 
 ## Usuarios de prueba
 
-Después de ejecutar `poblar_datos`, puedes iniciar sesión con cualquiera de estos usuarios. La contraseña de todos es **`prueba1234`**:
+Después de ejecutar `poblar_datos`, todos los usuarios tienen la contraseña **`prueba1234`**:
 
 | Usuario | Contraseña | Rol | Descripción |
 |---|---|---|---|
 | `bibliotecario1` | prueba1234 | Bibliotecario | Acceso completo al sistema y al panel |
-| `estudiante1` | prueba1234 | Estudiante | Puede solicitar préstamos y ver sus solicitudes |
+| `estudiante1` | prueba1234 | Estudiante | Tiene préstamos vencidos asignados |
 | `estudiante2` | prueba1234 | Estudiante | Tiene préstamos vencidos asignados |
 | `estudiante3` | prueba1234 | Estudiante | Tiene un préstamo activo |
 | `profesor1` | prueba1234 | Profesor | Puede registrar tesis y solicitar préstamos |
 | `visitante1` | prueba1234 | Visitante | Solo puede navegar el catálogo |
 
-El superusuario que creaste en el Paso 6 también puede entrar con sus credenciales.
-
 ---
 
 ## Comandos útiles
 
-### Enviar notificaciones de correo manualmente
+### Enviar notificaciones de correo
 
-Este comando revisa todos los préstamos y envía correos a los usuarios que tienen préstamos vencidos o que vencen en los próximos 2 días, siempre que no hayan recibido ya una notificación hoy:
+Revisa todos los préstamos y envía correos a usuarios con préstamos vencidos o próximos a vencer (solo si no han recibido notificación hoy):
 
 ```bash
 python manage.py enviar_notificaciones
 ```
 
-Para automatizarlo en producción, puedes configurar un cron job (Linux) o una tarea programada (Windows) que lo ejecute una vez al día.
+Para automatizarlo, configura un cron job (Linux/Mac):
 
-**Ejemplo de cron job (Linux/Mac) — ejecutar todos los días a las 8 AM:**
 ```bash
 0 8 * * * /ruta/al/proyecto/venv/bin/python /ruta/al/proyecto/manage.py enviar_notificaciones
 ```
 
-### Acceder al panel de administración de Django
-
-El panel nativo de Django está disponible en:
+### Panel de administración de Django
 
 ```
 http://127.0.0.1:8000/admin/
 ```
 
-Entra con el superusuario que creaste. Desde aquí puedes gestionar directamente todos los modelos de la base de datos.
-
-### Crear un nuevo superusuario adicional
-
-```bash
-python manage.py createsuperuser
-```
-
-### Ver todas las URLs disponibles del proyecto
-
-```bash
-python manage.py show_urls
-```
-
 ### Restablecer la base de datos desde cero
 
-Si quieres empezar de cero, elimina el archivo `db.sqlite3` y vuelve a ejecutar los pasos 5 y 6:
-
 ```bash
-# En Windows:
+# Windows:
 del db.sqlite3
 
-# En macOS/Linux:
+# macOS/Linux:
 rm db.sqlite3
 
 python manage.py migrate
@@ -380,51 +395,57 @@ python manage.py poblar_datos
 ```
 biblioteca-portal/
 │
-├── config/                     # Configuración principal del proyecto Django
-│   ├── settings.py             # Configuración: base de datos, correo, apps, etc.
-│   ├── urls.py                 # URLs raíz del proyecto
-│   └── views.py                # Vistas globales (home, registro)
+├── config/
+│   ├── settings.py             # Configuración general, correo, límites
+│   ├── urls.py                 # URLs raíz
+│   └── views.py                # Home y registro (con alertas personalizadas por rol)
 │
-├── biblioteca/                 # Aplicación principal
-│   ├── models.py               # Modelos de datos (Libro, Ejemplar, Préstamo, etc.)
+├── biblioteca/
+│   ├── models.py               # Todos los modelos del sistema
 │   ├── views.py                # Lógica de todas las vistas
-│   ├── urls.py                 # URLs de la aplicación biblioteca
+│   ├── urls.py                 # URLs de la aplicación
 │   ├── forms.py                # Formularios Django
-│   ├── admin.py                # Configuración del panel de administración
-│   ├── signals.py              # Señales (creación automática de perfil al registrarse)
-│   ├── decoradores.py          # Decoradores de control de acceso por rol
-│   ├── correo.py               # Lógica de envío de correos HTML
-│   ├── context_processors.py   # Inyecta variables de rol en todos los templates
+│   ├── admin.py                # Configuración del panel admin
+│   ├── signals.py              # Creación automática de perfil al registrarse
+│   ├── decoradores.py          # Control de acceso por rol
+│   ├── correo.py               # Envío de correos HTML
+│   ├── context_processors.py   # Variables de rol en todos los templates
 │   ├── management/
 │   │   └── commands/
-│   │       ├── enviar_notificaciones.py   # Comando para envío masivo de correos
-│   │       └── poblar_datos.py            # Comando para datos de prueba
+│   │       ├── enviar_notificaciones.py
+│   │       └── poblar_datos.py
 │   └── templatetags/
-│       └── biblioteca_extras.py           # Filtros y tags personalizados
+│       └── biblioteca_extras.py
 │
-├── templates/                  # Plantillas HTML
-│   ├── base.html               # Plantilla base (navbar, footer, mensajes)
-│   ├── home.html               # Página de inicio
-│   ├── biblioteca/             # Templates de cada módulo
+├── templates/
+│   ├── base.html
+│   ├── home.html               # Con alertas visuales por rol
+│   ├── biblioteca/
 │   │   ├── libro_list.html
 │   │   ├── libro_detail.html
+│   │   ├── libro_confirmar_eliminar.html  # Con protección contra ProtectedError
 │   │   ├── prestamo_list.html
-│   │   ├── panel_bibliotecario.html
+│   │   ├── panel_bibliotecario.html       # Con tesis más consultadas
+│   │   ├── mi_actividad.html              # Timeline personal del usuario
+│   │   ├── solicitudes_rol.html           # Aprobación de roles por el bibliotecario
 │   │   └── ...
-│   ├── includes/               # Fragmentos reutilizables
+│   ├── includes/
 │   │   ├── navbar.html
 │   │   ├── footer.html
 │   │   └── paginacion.html
-│   └── registration/           # Login, registro, logout
+│   └── registration/
+│       ├── login.html
+│       ├── registro.html       # Con selector visual de rol
+│       └── logged_out.html
 │
 ├── static/
-│   ├── css/main.css            # Sistema de diseño completo con variables CSS
-│   └── js/main.js              # JavaScript básico (cierre automático de alertas)
+│   ├── css/main.css            # Sistema de diseño con variables CSS
+│   └── js/main.js              # Menú de usuario, alertas y validación de formularios
 │
-├── media/                      # Archivos subidos por los usuarios (no incluido en git)
-├── .env                        # Variables de entorno sensibles (no incluido en git)
+├── media/
+├── .env
 ├── .gitignore
-└── manage.py                   # Punto de entrada de Django
+└── manage.py
 ```
 
 ---
@@ -432,48 +453,87 @@ biblioteca-portal/
 ## Flujo típico de uso del sistema
 
 ### Como estudiante o profesor:
-1. Registrarse en `/registro/` o iniciar sesión
-2. El bibliotecario cambia el rol desde el panel de usuarios
-3. Buscar un libro en el catálogo (`/biblioteca/libros/`)
-4. Hacer clic en "Solicitar préstamo" en la página del libro
-5. El bibliotecario aprueba la solicitud y el usuario recibe un correo de confirmación
-6. El usuario ve sus préstamos activos en `/biblioteca/prestamos/` o en "Mi perfil"
-7. Recibe un correo de recordatorio 2 días antes del vencimiento
+1. Registrarse en `/registro/` eligiendo el rol deseado y enviando la solicitud
+2. Navegar el portal como visitante mientras se espera aprobación
+3. Una vez aprobado el rol, buscar un libro en `/biblioteca/libros/`
+4. Solicitar el préstamo — el bibliotecario lo aprueba y llega un correo de confirmación
+5. Ver los préstamos activos en `/biblioteca/prestamos/` o en "Mi actividad"
+6. Si un préstamo está próximo a vencer, aparece una alerta en el home
+7. Solicitar una renovación si se necesita más tiempo
 
 ### Como bibliotecario:
-1. Iniciar sesión con una cuenta staff
-2. Acceder al panel en `/biblioteca/panel/`
-3. Gestionar libros, ejemplares, tesis, profesores y recursos
-4. Revisar y gestionar solicitudes de préstamo en `/biblioteca/solicitudes/`
+1. Iniciar sesión y acceder al panel en `/biblioteca/panel/`
+2. Revisar las solicitudes de rol pendientes en **Solicitudes de rol**
+3. Gestionar libros, ejemplares, tesis, profesores, categorías y recursos
+4. Aprobar o rechazar solicitudes de préstamo en `/biblioteca/solicitudes/`
 5. Registrar devoluciones desde la lista de préstamos
 6. Enviar notificaciones masivas desde `/biblioteca/notificaciones/`
+7. Consultar las tesis más visitadas en el panel de control
+
+---
+
+## Configuración avanzada
+
+### Límite de préstamos activos por usuario
+
+En `config/settings.py`:
+
+```python
+LIMITE_PRESTAMOS_ACTIVOS = 3  # Cambia este valor según las políticas de la biblioteca
+```
+
+### Correo en modo desarrollo (sin SMTP)
+
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+Los correos se imprimirán en la terminal en lugar de enviarse realmente.
+
+### Correo en producción (Gmail SMTP)
+
+```python
+EMAIL_BACKEND    = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST       = 'smtp.gmail.com'
+EMAIL_PORT       = 587
+EMAIL_USE_TLS    = True
+EMAIL_HOST_USER  = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+```
 
 ---
 
 ## Solución de problemas frecuentes
 
-**Error: `ModuleNotFoundError: No module named 'dotenv'`**
+**`ModuleNotFoundError: No module named 'dotenv'`**
 ```bash
 pip install python-dotenv
 ```
 
-**Error: `ModuleNotFoundError: No module named 'PIL'`**
+**`ModuleNotFoundError: No module named 'PIL'`**
 ```bash
 pip install pillow
 ```
 
 **Los correos no se envían**
 
-Verifica en `config/settings.py` que `EMAIL_BACKEND` esté configurado como SMTP y que las credenciales en `.env` sean correctas. Para depurar, cámbialo temporalmente a `console.EmailBackend` — los correos aparecerán en la terminal.
+Verifica que `EMAIL_BACKEND` esté configurado como SMTP y que las credenciales en `.env` sean correctas. Para depurar usa `console.EmailBackend`.
 
-**El servidor arranca pero las imágenes no se ven**
+**Las imágenes no se ven**
 
-Asegúrate de que la carpeta `media/` exista en la raíz del proyecto y de que `config/urls.py` incluya:
+Verifica que la carpeta `media/` exista y que `config/urls.py` incluya:
 ```python
 + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 ```
-(Ya está incluido en el proyecto por defecto.)
+
+**Error `ProtectedError` al eliminar un libro**
+
+El libro tiene préstamos registrados. Primero registra la devolución de todos los ejemplares prestados desde la lista de préstamos, luego podrás eliminarlo.
 
 **Error al hacer migrate: tabla ya existe**
 
-Elimina el archivo `db.sqlite3` y vuelve a ejecutar `python manage.py migrate`.
+Elimina `db.sqlite3` y ejecuta `python manage.py migrate` de nuevo.
+
+**Un usuario recién registrado no puede solicitar préstamos**
+
+Su solicitud de rol está pendiente de aprobación. El bibliotecario debe ir a **Solicitudes de rol** en el panel y aprobarla.

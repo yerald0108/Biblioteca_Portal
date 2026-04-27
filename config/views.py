@@ -1,14 +1,69 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
-from biblioteca.models import Libro, Prestamo, Tesis, Profesor
+from biblioteca.models import Libro, Prestamo, Tesis, Profesor, Recurso
 from biblioteca.forms import RegistroUsuarioForm
 from django.contrib import messages
+from django.utils import timezone
+from biblioteca.decoradores import get_rol
 
 
 @login_required
 def home(request):
-    from biblioteca.models import Libro, Prestamo, Tesis, Profesor, Recurso
+    
+    hoy = timezone.now().date()
+    rol = get_rol(request.user)
+
+    # Alertas personalizadas por rol
+    alertas = []
+
+    if rol in ('estudiante', 'profesor'):
+        # Préstamos vencidos
+        vencidos = Prestamo.objects.filter(
+            usuario=request.user,
+            estado='vencido'
+        ).select_related('ejemplar__libro')
+
+        for p in vencidos:
+            alertas.append({
+                'tipo':    'error',
+                'mensaje': f'Tu préstamo de "{p.ejemplar.libro.titulo}" está vencido '
+                           f'hace {p.dias_retraso()} día{"s" if p.dias_retraso() != 1 else ""}. '
+                           f'Por favor devuélvelo a la biblioteca.',
+                'url':     'biblioteca:prestamo_list',
+                'cta':     'Ver mis préstamos',
+            })
+
+        # Próximos a vencer (2 días o menos)
+        por_vencer = Prestamo.objects.filter(
+            usuario=request.user,
+            estado='activo',
+            fecha_devolucion__lte=hoy + timezone.timedelta(days=2),
+            fecha_devolucion__gte=hoy,
+        ).select_related('ejemplar__libro')
+
+        for p in por_vencer:
+            dias = p.dias_restantes()
+            alertas.append({
+                'tipo':    'warning',
+                'mensaje': f'Tu préstamo de "{p.ejemplar.libro.titulo}" vence '
+                           f'{"hoy" if dias == 0 else f"en {dias} día{'s' if dias != 1 else ''}"}. '
+                           f'Devuélvelo o solicita una renovación.',
+                'url':     'biblioteca:prestamo_list',
+                'cta':     'Ver mis préstamos',
+            })
+
+        # Solicitud de rol pendiente
+        if hasattr(request.user, 'perfil'):
+            perfil = request.user.perfil
+            if perfil.tiene_solicitud_pendiente():
+                alertas.append({
+                    'tipo':    'info',
+                    'mensaje': f'Tu solicitud de rol "{perfil.get_rol_solicitado_display()}" '
+                               f'está pendiente de aprobación por el bibliotecario.',
+                    'url':     None,
+                    'cta':     None,
+                })
 
     context = {
         'total_libros':     Libro.objects.count(),

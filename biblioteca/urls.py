@@ -47,6 +47,7 @@ urlpatterns = [
     path('usuarios/',                         views.usuario_list,        name='usuario_list'),
     path('usuarios/<int:pk>/editar/',         views.usuario_editar,      name='usuario_editar'),
     path('mi-perfil/carnet/',                 views.carnet_biblioteca,   name='carnet_biblioteca'),
+    path('mi-actividad/',                     views.mi_actividad,        name='mi_actividad'),
     
     # Notificaciones y búsqueda
     path('notificaciones/',                   views.notificaciones_list, name='notificaciones'),

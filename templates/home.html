@@ -3,6 +3,30 @@
 
 {% block content %}
 
+{% if alertas %}
+<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:1.25rem;">
+  {% for alerta in alertas %}
+    <div class="alert alert--{{ alerta.tipo }}"
+         style="align-items:center; gap:12px;">
+      <div style="flex:1;">
+        <span style="font-size:14px;">{{ alerta.mensaje }}</span>
+      </div>
+      {% if alerta.url %}
+        <a href="{% url alerta.url %}"
+           class="btn btn--sm"
+           style="flex-shrink:0; white-space:nowrap;
+                  background:rgba(255,255,255,0.3);
+                  color:inherit; border:1px solid currentColor;">
+          {{ alerta.cta }}
+        </a>
+      {% endif %}
+      <button class="alert__close"
+              onclick="this.parentElement.remove()">×</button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <!-- HERO BANNER -->
 <div class="hero-banner">
   <h1 class="hero-banner__title">Gestión y Acceso al Conocimiento</h1>

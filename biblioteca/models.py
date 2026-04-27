@@ -156,6 +156,14 @@ class Tesis(models.Model):
     disponible  = models.BooleanField(default=True,
                                        verbose_name='Disponible para consulta')
     fecha_registro = models.DateTimeField(auto_now_add=True)
+    vistas      = models.PositiveIntegerField(default=0,verbose_name='Visualizaciones')
+    creado_por  = models.ForeignKey(           
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tesis_creadas',
+        verbose_name='Registrado por'
+    )
 
     class Meta:
         verbose_name        = 'Tesis'

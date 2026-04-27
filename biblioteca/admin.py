@@ -36,7 +36,7 @@ class NotificacionCorreoAdmin(admin.ModelAdmin):
     
 @admin.register(Tesis)
 class TesisAdmin(admin.ModelAdmin):
-    list_display  = ['titulo', 'autor', 'tipo', 'anio', 'area', 'disponible']
+    list_display  = ['titulo', 'autor', 'tipo', 'anio', 'area', 'disponible', 'creado_por']
     list_filter   = ['tipo', 'disponible', 'anio']
     search_fields = ['titulo', 'autor', 'area']
     list_editable = ['disponible']

@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}Mi actividad · Portal Institucional{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Mi actividad</h1>
+    <p class="page-header__sub">
+      Historial completo de tu uso del portal
+    </p>
+  </div>
+  <a href="{% url 'biblioteca:mi_perfil' %}" class="btn btn--secondary">
+    ← Mi perfil
+  </a>
+</div>
+
+<!-- STATS RÁPIDAS -->
+<div style="display:grid; grid-template-columns:repeat(3,1fr);
+            gap:12px; margin-bottom:1.5rem;">
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--verde);">
+      {{ stats.prestamos_activos }}
+    </div>
+    <div class="stat-card__label">Préstamos activos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num"
+         style="color:{% if stats.prestamos_vencidos > 0 %}var(--rojo){% else %}var(--gris-texto){% endif %};">
+      {{ stats.prestamos_vencidos }}
+    </div>
+    <div class="stat-card__label">Préstamos vencidos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num">{{ stats.prestamos_devueltos }}</div>
+    <div class="stat-card__label">Libros devueltos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num"
+         style="color:{% if stats.solicitudes_pendientes > 0 %}var(--ambar){% else %}var(--gris-texto){% endif %};">
+      {{ stats.solicitudes_pendientes }}
+    </div>
+    <div class="stat-card__label">Solicitudes pendientes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num" style="color:var(--verde);">
+      {{ stats.solicitudes_aprobadas }}
+    </div>
+    <div class="stat-card__label">Solicitudes aprobadas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__num"
+         style="color:{% if stats.renovaciones_pendientes > 0 %}var(--ambar){% else %}var(--gris-texto){% endif %};">
+      {{ stats.renovaciones_pendientes }}
+    </div>
+    <div class="stat-card__label">Renovaciones pendientes</div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="card">
+  <div class="card__header">
+    <div class="card__title">Timeline de actividad</div>
+    <span style="font-size:12px; color:var(--gris-medio);">
+      {{ eventos|length }} evento{{ eventos|length|pluralize }}
+    </span>
+  </div>
+
+  {% if eventos %}
+  <div style="position:relative; padding-left:2rem;">
+
+    <!-- Línea vertical del timeline -->
+    <div style="position:absolute; left:8px; top:0; bottom:0;
+                width:2px; background:var(--borde);
+                border-radius:2px;"></div>
+
+    {% for evento in eventos %}
+    <div style="position:relative; margin-bottom:1.25rem; padding-bottom:1.25rem;
+                {% if not forloop.last %}border-bottom:1px solid var(--borde);{% endif %}">
+
+      <!-- Punto del timeline -->
+      <div style="position:absolute; left:-2rem; top:2px;
+                  width:18px; height:18px; border-radius:50%;
+                  background:
+                    {% if evento.color == 'verde' %}var(--verde)
+                    {% elif evento.color == 'rojo' %}var(--rojo)
+                    {% elif evento.color == 'ambar' %}var(--ambar)
+                    {% else %}var(--azul-claro){% endif %};
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:10px; border:2px solid var(--blanco);
+                  box-shadow:0 0 0 2px
+                    {% if evento.color == 'verde' %}var(--verde)
+                    {% elif evento.color == 'rojo' %}var(--rojo)
+                    {% elif evento.color == 'ambar' %}var(--ambar)
+                    {% else %}var(--azul-claro){% endif %};">
+      </div>
+
+      <!-- Contenido del evento -->
+      <div style="display:flex; align-items:flex-start;
+                  justify-content:space-between; gap:1rem;">
+        <div style="flex:1; min-width:0;">
+
+          <!-- Tipo de evento -->
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span style="font-size:16px;">{{ evento.icono }}</span>
+            <span style="font-size:12px; font-weight:600; text-transform:uppercase;
+                         letter-spacing:.06em;
+                         color:
+                           {% if evento.color == 'verde' %}var(--verde)
+                           {% elif evento.color == 'rojo' %}var(--rojo)
+                           {% elif evento.color == 'ambar' %}var(--ambar)
+                           {% else %}var(--azul){% endif %};">
+              {% if evento.tipo == 'prestamo' %}Préstamo registrado
+              {% elif evento.tipo == 'devolucion' %}Devolución
+              {% elif evento.tipo == 'solicitud' %}
+                Solicitud
+                {% if evento.subtipo == 'pendiente' %}pendiente
+                {% elif evento.subtipo == 'aprobada' %}aprobada
+                {% else %}rechazada{% endif %}
+              {% elif evento.tipo == 'renovacion' %}
+                Renovación
+                {% if evento.subtipo == 'pendiente' %}pendiente
+                {% elif evento.subtipo == 'aprobada' %}aprobada
+                {% else %}rechazada{% endif %}
+              {% endif %}
+            </span>
+          </div>
+
+          <!-- Título del libro -->
+          <div style="font-size:14px; font-weight:600; color:var(--gris-texto);
+                      margin-bottom:4px; white-space:nowrap; overflow:hidden;
+                      text-overflow:ellipsis;">
+            {{ evento.titulo }}
+          </div>
+
+          <!-- Detalle según tipo -->
+          {% if evento.tipo == 'prestamo' %}
+            <div style="font-size:12px; color:var(--gris-medio);">
+              Ejemplar: {{ evento.objeto.ejemplar.codigo }}
+              · Vence: {{ evento.objeto.fecha_devolucion|date:"d/m/Y" }}
+              {% if evento.objeto.estado == 'vencido' %}
+                <span style="color:var(--rojo); font-weight:600;">
+                  · Vencido ({{ evento.objeto.dias_retraso }} día{{ evento.objeto.dias_retraso|pluralize }} de retraso)
+                </span>
+              {% elif evento.objeto.estado == 'activo' %}
+                <span style="color:var(--verde);">
+                  · {{ evento.objeto.dias_restantes }} día{{ evento.objeto.dias_restantes|pluralize }} restantes
+                </span>
+              {% endif %}
+            </div>
+          {% elif evento.tipo == 'devolucion' %}
+            <div style="font-size:12px; color:var(--verde);">
+              Devuelto correctamente el {{ evento.objeto.fecha_devuelto|date:"d/m/Y" }}
+            </div>
+          {% elif evento.tipo == 'solicitud' %}
+            <div style="font-size:12px; color:var(--gris-medio);">
+              {% if evento.objeto.respuesta %}
+                Respuesta: {{ evento.objeto.respuesta|truncatechars:80 }}
+              {% else %}
+                Sin respuesta aún
+              {% endif %}
+            </div>
+          {% elif evento.tipo == 'renovacion' %}
+            <div style="font-size:12px; color:var(--gris-medio);">
+              Días solicitados: {{ evento.objeto.dias_solicitados }}
+              {% if evento.objeto.nueva_fecha %}
+                · Nueva fecha: {{ evento.objeto.nueva_fecha|date:"d/m/Y" }}
+              {% endif %}
+            </div>
+          {% endif %}
+
+        </div>
+
+        <!-- Fecha -->
+        <div style="flex-shrink:0; text-align:right;">
+          <div style="font-size:12px; font-weight:600; color:var(--gris-texto);">
+            {{ evento.fecha|date:"d/m/Y" }}
+          </div>
+          <div style="font-size:11px; color:var(--gris-medio);">
+            {{ evento.fecha|date:"H:i" }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  {% else %}
+  <div style="text-align:center; padding:3rem; color:var(--gris-medio);">
+    <div style="font-size:48px; margin-bottom:1rem;">📭</div>
+    <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
+      Sin actividad registrada
+    </div>
+    <div style="font-size:13px;">
+      Aquí aparecerá tu historial de préstamos, solicitudes y renovaciones.
+    </div>
+    <a href="{% url 'biblioteca:libro_list' %}"
+       class="btn btn--primary" style="margin-top:1rem;">
+      Explorar libros
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

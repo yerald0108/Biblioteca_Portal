@@ -36,6 +36,13 @@
       Carnet: <strong>{{ perfil.carnet }}</strong>
     </div>
   {% endif %}
+  <div style="margin-top:0.75rem;">
+  <a href="{% url 'biblioteca:mi_actividad' %}"
+     class="btn btn--secondary btn--sm"
+     style="width:100%; justify-content:center;">
+    Ver mi actividad
+  </a>
+</div>
 
   <!-- BOTÓN DEL CARNET — esto es lo nuevo que agregas -->
   <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--borde);">

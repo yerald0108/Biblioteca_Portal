@@ -377,6 +377,68 @@
   </div>
 </div>
 
+<!-- TESIS MÁS CONSULTADAS -->
+<div class="card" style="margin-top:1.5rem;">
+  <div class="card__header">
+    <div class="card__title">Tesis más consultadas</div>
+    <a href="{% url 'biblioteca:tesis_list' %}" class="card__action">
+      Ver repositorio →
+    </a>
+  </div>
+  {% if tesis_populares %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Tipo</th>
+          <th>Área</th>
+          <th style="text-align:center;">Vistas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tesis_populares %}
+        <tr>
+          <td style="font-size:13px; color:var(--gris-medio); font-weight:600;">
+            {{ forloop.counter }}
+          </td>
+          <td>
+            <a href="{% url 'biblioteca:tesis_detail' t.pk %}"
+               style="font-size:13px; font-weight:600; color:var(--azul-claro);">
+              {{ t.titulo|truncatechars:50 }}
+            </a>
+          </td>
+          <td style="font-size:13px; color:var(--gris-medio);">
+            {{ t.autor }}
+          </td>
+          <td>
+            <span class="badge badge--info" style="font-size:10px;">
+              {{ t.get_tipo_display }}
+            </span>
+          </td>
+          <td style="font-size:12px; color:var(--gris-medio);">
+            {{ t.area|truncatechars:25 }}
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:14px; font-weight:600;
+                         color:{% if t.vistas > 10 %}var(--verde){% else %}var(--gris-texto){% endif %};">
+              {{ t.vistas }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:1.5rem; color:var(--gris-medio); font-size:13px;">
+    Aún no hay visualizaciones registradas.
+  </div>
+  {% endif %}
+</div>
+
 {% endblock %}
 
 {% block extra_js %}

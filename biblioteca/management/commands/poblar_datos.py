@@ -59,6 +59,7 @@ class Command(BaseCommand):
         for username, rol in roles.items():
             perfil, _ = PerfilUsuario.objects.get_or_create(usuario=usuarios[username])
             perfil.rol    = rol
+            perfil.rol_aprobado = True
             perfil.carnet = carnets.get(username, '')
             perfil.save()
 

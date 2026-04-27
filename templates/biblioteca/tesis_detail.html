@@ -56,7 +56,22 @@
           {% endif %}
         </div>
       </div>
+      {% if tesis.creado_por %}
+      <div>
+        <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase; letter-spacing:.06em;">Registrado por</div>
+        <div style="font-size:14px; font-weight:600;">
+          {{ tesis.creado_por.get_full_name|default:tesis.creado_por.username }}
+        </div>
+      </div>
+      {% endif %}
     </div>
+    <div>
+  <div style="font-size:11px; color:var(--gris-medio); text-transform:uppercase;
+              letter-spacing:.06em;">Visualizaciones</div>
+  <div style="font-size:14px; font-weight:600;">
+    {{ tesis.vistas }} vista{{ tesis.vistas|pluralize }}
+  </div>
+</div>
 
     <!-- Resumen -->
     {% if tesis.resumen %}
