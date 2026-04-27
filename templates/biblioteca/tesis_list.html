@@ -37,16 +37,6 @@
           <option value="{{ a }}" {% if area == a %}selected{% endif %}>{{ a }}</option>
         {% endfor %}
       </select>
-      <div style="display:flex; align-items:center; justify-content:space-between;
-            gap:8px;">
-      <div style="font-size:12px; color:var(--azul); background:var(--azul-fondo);
-                  padding:2px 10px; border-radius:var(--radio-pill);">
-        {{ t.area }}
-      </div>
-      <div style="font-size:11px; color:var(--gris-medio);">
-        👁 {{ t.vistas }} vista{{ t.vistas|pluralize }}
-      </div>
-    </div>
     </div>
     <button type="submit" class="btn btn--primary" style="height:40px;">Filtrar</button>
     <a href="{% url 'biblioteca:tesis_list' %}" class="btn btn--secondary" style="height:40px;">Limpiar</a>
@@ -78,10 +68,15 @@
       </div>
     </div>
 
-    <!-- Área -->
-    <div style="font-size:12px; color:var(--azul); background:var(--azul-fondo);
-                display:inline-block; padding:2px 10px; border-radius:var(--radio-pill);">
-      {{ t.area }}
+    <!-- Área y vistas -->
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <div style="font-size:12px; color:var(--azul); background:var(--azul-fondo);
+                  padding:2px 10px; border-radius:var(--radio-pill);">
+        {{ t.area }}
+      </div>
+      <div style="font-size:11px; color:var(--gris-medio);">
+        👁 {{ t.vistas }} vista{{ t.vistas|pluralize }}
+      </div>
     </div>
 
     <!-- Resumen -->
